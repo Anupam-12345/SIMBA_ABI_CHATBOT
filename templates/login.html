@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simba - Intelligent Assistant Login</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            width: 420px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #6b7280;
+            transition: all 0.3s;
+        }
+        .auth-tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            margin-bottom: -2px;
+        }
+        .auth-panel {
+            display: none;
+        }
+        .auth-panel.active {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .microsoft-btn {
+            background: #2E2E2E;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .microsoft-btn:hover {
+            background: #1E1E1E;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Reset button container */
+        .reset-button-container {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .reset-password-btn {
+            background: transparent;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .reset-password-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            border-color: transparent;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 20px;
+            color: #667eea;
+            font-weight: 500;
+        }
+        .error-msg {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #dc2626;
+        }
+        .session-expired {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #dc2626;
+        }
+        .info-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .domain-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .badge-azure {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .badge-local {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            width: 450px;
+            max-width: 90%;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #1a1a2e;
+            font-size: 24px;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+            line-height: 1;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .modal .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+        .modal .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .modal .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .reset-submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .reset-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .modal-error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            border-left: 4px solid #dc2626;
+        }
+        .modal-success {
+            background: #d1fae5;
+            color: #059669;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            border-left: 4px solid #059669;
+        }
+        .requirements {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+        .password-strength {
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>
+            🦁 Simba
+        </h1>
+        <div class="subtitle">Intelligent Document Retrieval & Policy Assistant</div>
+        
+        <div class="session-expired" id="sessionExpiredMsg">
+            ⏰ Your session has expired. Please log in again.
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('azure')">Microsoft Login</button>
+            <button class="auth-tab" onclick="switchTab('local')">Local Login</button>
+        </div>
+        
+        <!-- Azure AD Panel -->
+        <div id="azurePanel" class="auth-panel active">
+            <p style="margin-bottom: 20px; color: #555; font-size: 14px;">
+                Sign in with your Microsoft work account
+                <span class="domain-badge badge-azure">@annovasolutions.com</span>
+            </p>
+            <button class="microsoft-btn" id="azureLoginBtn">
+                <svg width="20" height="20" viewBox="0 0 23 23">
+                    <path fill="#f35325" d="M1 1h10v10H1z"/>
+                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                </svg>
+                Sign in with Microsoft
+            </button>
+        </div>
+        
+        <!-- Local Login Panel -->
+        <div id="localPanel" class="auth-panel">
+            <p style="margin-bottom: 20px; color: #555; font-size: 14px;">
+                Sign in with your local account
+                <span class="domain-badge badge-local">@annovasolutions.in</span>
+            </p>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="localEmail" placeholder="name@annovasolutions.in">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="localPassword" placeholder="Enter your password">
+            </div>
+            <button class="login-btn" id="localLoginBtn">
+                Sign In
+            </button>
+            <div class="reset-button-container">
+                <button class="reset-password-btn" id="resetPasswordBtn">
+                    🔐 Forgot Password? Reset Here
+                </button>
+            </div>
+            <div class="info-text">
+                For @annovasolutions.in users only.<br>
+                First-time password: <strong>Annova@123</strong> (you'll be prompted to change it)
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">Please wait...</div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 Reset Password</h2>
+                <button class="close-modal" onclick="closeResetModal()">&times;</button>
+            </div>
+            <div id="modalError" class="modal-error"></div>
+            <div id="modalSuccess" class="modal-success"></div>
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="resetEmail" placeholder="name@annovasolutions.in">
+            </div>
+            <div class="input-group">
+                <label>Current/Temporary Password</label>
+                <input type="password" id="resetCurrentPassword" placeholder="Enter your current password">
+            </div>
+            <div class="input-group">
+                <label>New Password</label>
+                <input type="password" id="resetNewPassword" placeholder="Enter new password">
+                <div class="requirements">
+                    <strong>Password Requirements:</strong><br>
+                    ✓ Minimum 8 characters<br>
+                    ✓ At least one uppercase letter (A-Z)<br>
+                    ✓ At least one lowercase letter (a-z)<br>
+                    ✓ At least one number (0-9)<br>
+                    ✓ At least one special character (!@#$%^&*)
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="resetConfirmPassword" placeholder="Confirm your new password">
+            </div>
+            <button class="reset-submit-btn" id="resetSubmitBtn">Reset Password</button>
+        </div>
+    </div>
+
+    <script>
+
+        const azureLoginBtn = document.getElementById('azureLoginBtn');
+        const localLoginBtn = document.getElementById('localLoginBtn');
+        const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+        const loading = document.getElementById('loading');
+        const sessionExpiredMsg = document.getElementById('sessionExpiredMsg');
+        const errorMsg = document.getElementById('errorMsg');
+        const resetModal = document.getElementById('resetModal');
+
+        const CURRENT_HOST = window.location.origin;
+        sessionStorage.setItem('login_host', CURRENT_HOST);
+        console.log('📡 Current host stored:', CURRENT_HOST);
+        
+        // Check if session expired message should be shown
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('expired') === 'true') {
+            sessionExpiredMsg.style.display = 'block';
+        }
+        
+        function switchTab(tab) {
+            const azurePanel = document.getElementById('azurePanel');
+            const localPanel = document.getElementById('localPanel');
+            const tabs = document.querySelectorAll('.auth-tab');
+            
+            tabs.forEach((t, i) => {
+                if ((tab === 'azure' && i === 0) || (tab === 'local' && i === 1)) {
+                    t.classList.add('active');
+                } else {
+                    t.classList.remove('active');
+                }
+            });
+            
+            if (tab === 'azure') {
+                azurePanel.classList.add('active');
+                localPanel.classList.remove('active');
+            } else {
+                azurePanel.classList.remove('active');
+                localPanel.classList.add('active');
+            }
+            
+            errorMsg.style.display = 'none';
+        }
+        
+        // Open Reset Password Modal
+        if (resetPasswordBtn) {
+            resetPasswordBtn.onclick = function(e) {
+                e.preventDefault();
+                document.getElementById('resetEmail').value = '';
+                document.getElementById('resetCurrentPassword').value = '';
+                document.getElementById('resetNewPassword').value = '';
+                document.getElementById('resetConfirmPassword').value = '';
+                document.getElementById('modalError').style.display = 'none';
+                document.getElementById('modalSuccess').style.display = 'none';
+                resetModal.style.display = 'flex';
+            };
+        }
+        
+        // Close Reset Password Modal
+        window.closeResetModal = function() {
+            resetModal.style.display = 'none';
+        };
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target === resetModal) {
+                resetModal.style.display = 'none';
+            }
+        };
+        
+        // Reset Password Function
+        const resetSubmitBtn = document.getElementById('resetSubmitBtn');
+        if (resetSubmitBtn) {
+            resetSubmitBtn.onclick = async function() {
+                const email = document.getElementById('resetEmail').value.trim();
+                const currentPassword = document.getElementById('resetCurrentPassword').value;
+                const newPassword = document.getElementById('resetNewPassword').value;
+                const confirmPassword = document.getElementById('resetConfirmPassword').value;
+                const modalError = document.getElementById('modalError');
+                const modalSuccess = document.getElementById('modalSuccess');
+                
+                // Validation
+                if (!email || !currentPassword || !newPassword || !confirmPassword) {
+                    modalError.textContent = '⚠️ Please fill in all fields';
+                    modalError.style.display = 'block';
+                    modalSuccess.style.display = 'none';
+                    return;
+                }
+                
+                if (!email.endsWith('@annovasolutions.in')) {
+                    modalError.textContent = '⚠️ Please use @annovasolutions.in email address';
+                    modalError.style.display = 'block';
+                    modalSuccess.style.display = 'none';
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    modalError.textContent = '⚠️ New passwords do not match';
+                    modalError.style.display = 'block';
+                    modalSuccess.style.display = 'none';
+                    return;
+                }
+                
+                // Password complexity validation
+                if (newPassword.length < 8) {
+                    modalError.textContent = '⚠️ Password must be at least 8 characters';
+                    modalError.style.display = 'block';
+                    return;
+                }
+                
+                if (!/[A-Z]/.test(newPassword)) {
+                    modalError.textContent = '⚠️ Password must contain at least one uppercase letter';
+                    modalError.style.display = 'block';
+                    return;
+                }
+                
+                if (!/[a-z]/.test(newPassword)) {
+                    modalError.textContent = '⚠️ Password must contain at least one lowercase letter';
+                    modalError.style.display = 'block';
+                    return;
+                }
+                
+                if (!/[0-9]/.test(newPassword)) {
+                    modalError.textContent = '⚠️ Password must contain at least one number';
+                    modalError.style.display = 'block';
+                    return;
+                }
+                
+                if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+                    modalError.textContent = '⚠️ Password must contain at least one special character';
+                    modalError.style.display = 'block';
+                    return;
+                }
+                
+                resetSubmitBtn.disabled = true;
+                resetSubmitBtn.textContent = 'Processing...';
+                modalError.style.display = 'none';
+                modalSuccess.style.display = 'none';
+                
+                try {
+                    const response = await fetch('/api/auth/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            email: email,
+                            current_password: currentPassword,
+                            new_password: newPassword
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        modalSuccess.textContent = '✅ Password reset successfully! You can now login with your new password.';
+                        modalSuccess.style.display = 'block';
+                        setTimeout(() => {
+                            resetModal.style.display = 'none';
+                            document.getElementById('localEmail').value = email;
+                            document.getElementById('localPassword').value = '';
+                            switchTab('local');
+                            showError('Password reset successful! Please login with your new password.');
+                        }, 3000);
+                    } else {
+                        modalError.textContent = data.error || '❌ Failed to reset password';
+                        modalError.style.display = 'block';
+                    }
+                } catch (err) {
+                    modalError.textContent = '❌ Network error. Please try again.';
+                    modalError.style.display = 'block';
+                } finally {
+                    resetSubmitBtn.disabled = false;
+                    resetSubmitBtn.textContent = 'Reset Password';
+                }
+            };
+        }
+        
+        // Azure AD Login
+        azureLoginBtn.onclick = function() {
+            azureLoginBtn.style.display = 'none';
+            loading.style.display = 'block';
+            window.location.href = '/login/azure';
+        };
+        
+        // Local Login
+        localLoginBtn.onclick = async function() {
+            const email = document.getElementById('localEmail').value.trim();
+            const password = document.getElementById('localPassword').value;
+            
+            if (!email || !password) {
+                showError('Please enter both email and password');
+                return;
+            }
+            
+            if (!email.endsWith('@annovasolutions.in')) {
+                showError('Please use @annovasolutions.in email address for local login');
+                return;
+            }
+            
+            localLoginBtn.disabled = true;
+            localLoginBtn.textContent = 'Signing in...';
+            errorMsg.style.display = 'none';
+            
+            try {
+                const response = await fetch('/login/local', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.redirect || '/';
+                } else {
+                    showError(data.error || 'Login failed');
+                    localLoginBtn.disabled = false;
+                    localLoginBtn.textContent = 'Sign In';
+                }
+            } catch (err) {
+                showError('Network error. Please try again.');
+                localLoginBtn.disabled = false;
+                localLoginBtn.textContent = 'Sign In';
+            }
+        };
+        
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Check if already logged in
+        fetch('/api/auth/check') 
+            .then(res => res.json())
+            .then(data => {
+                if (data.authenticated) {
+                    window.location.href = '/';
+                }
+            })
+            .catch(err => console.error('Auth check error:', err));
+        
+        // Enter key support for local login
+        document.getElementById('localPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                localLoginBtn.click();
+            }
+        });
+        
+        // Enter key support for reset modal
+        document.getElementById('resetConfirmPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                resetSubmitBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.chat-window {
+  height: 65vh;
+  overflow-y: auto;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--bs-secondary-bg);
+}
+
+.msg {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg.user { align-items: flex-end; }
+.msg.assistant { align-items: flex-start; }
+
+.bubble {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.msg.user .bubble {
+  background: #0d6efd;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.msg.assistant .bubble {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-bottom-left-radius: 4px;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+  margin-top: 4px;
+}
+
+.sources {
+  font-size: 0.78rem;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--bs-border-color);
+}
+
+.badge-confidence-High { background-color: #198754 !important; }
+.badge-confidence-Medium { background-color: #ffc107 !important; color: #000 !important; }
+.badge-confidence-Low { background-color: #dc3545 !important; }
+
+.copy-btn {
+  font-size: 0.7rem;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 576px) {
+  .chat-window { height: 70vh; }
+  .bubble { max-width: 95%; }
+}
+
+/* Related images extracted from SOP documents */
+.sop-image-block {
+  margin-top: 12px;
+  width: min(760px, 100%);
+}
+
+.sop-image-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+
+.sop-image-card {
+  margin: 0 0 12px 0;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bs-body-bg);
+}
+
+.sop-image-card img {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.sop-image-card figcaption {
+  padding: 7px 10px;
+  font-size: 11px;
+  color: var(--bs-secondary-color);
+  border-top: 1px solid var(--bs-border-color);
+}

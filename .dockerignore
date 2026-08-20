@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.gitignore
+*.log
+build.log
+test_results.csv
+vectorstore.backup/
+.env
+
+# Never ship the source spreadsheet - facilities.enc replaces it.
+*.xlsx
+*.xls
+Facility Data.xlsx

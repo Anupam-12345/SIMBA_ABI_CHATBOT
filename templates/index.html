@@ -1,0 +1,3083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP AI Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #5A52D5;
+            --bg-dark: #1A1A2E;
+            --bg-light: #F0F2F5;
+            --text-primary: #1A1A2E;
+            --text-secondary: #6B7280;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-light);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            background: var(--bg-dark);
+            color: white;
+            height: 100vh;
+            padding: 24px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        .sidebar .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar .brand .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .sidebar .brand h5 { font-weight: 700; margin: 0; font-size: 18px; }
+        .sidebar .brand small { color: #8B8FA7; font-size: 12px; display: block; }
+        
+        .btn-new-chat {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-new-chat:hover { background: var(--primary-dark); color: white; }
+        
+        .filter-section { margin: 16px 0 20px; }
+        .filter-section label { color: #8B8FA7; font-size: 11px; font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 6px; }
+        .filter-section select { 
+            width: 100%; 
+            padding: 10px 14px; 
+            border-radius: 10px; 
+            background: rgba(255,255,255,0.06); 
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.08); 
+            font-size: 14px; 
+        }
+        .filter-section select option { background: #1A1A2E; color: white; }
+        
+        .quick-actions {
+            flex: 1;
+            margin: 8px 0;
+            overflow-y: auto;
+            max-height: calc(100vh - 400px);
+        }
+        
+        .quick-actions::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .quick-actions::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+        
+        .quick-actions h3 {
+            color: #8B8FA7;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .quick-actions h3 i {
+            margin-right: 6px;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .quick-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(108, 99, 255, 0.2);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .quick-btn i {
+            width: 16px;
+            font-size: 12px;
+            color: var(--primary);
+        }
+        
+        .quick-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .quick-btn.active i {
+            color: white;
+        }
+        
+        #context-indicator {
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: rgba(25, 118, 210, 0.15);
+            border-radius: 6px;
+            border-left: 3px solid #1976d2;
+            font-size: 11px;
+        }
+        
+        #context-indicator strong {
+            color: white;
+        }
+        
+        #context-indicator span {
+            color: #8B8FA7;
+        }
+        
+        #context-indicator button {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        #context-indicator button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: white;
+        }
+        
+        .chat-header {
+            padding: 16px 32px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            flex-shrink: 0;
+        }
+        
+        .chat-header .title { font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .chat-header .title i { color: var(--primary); }
+        
+        .chat-header .badge-online {
+            background: #ECFDF5;
+            color: #065F46;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .chat-header .badge-online .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #34D399;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background: #FAFBFC;
+        }
+        
+        .message { margin-bottom: 16px; animation: slideUp 0.3s ease-out; }
+        .message.user { text-align: right; }
+        .message.assistant { text-align: left; }
+        
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .message-bubble {
+            display: inline-block;
+            max-width: 85%;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        
+        .message.user .message-bubble {
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.assistant .message-bubble {
+            background: white;
+            color: var(--text-primary);
+            border: 1px solid #E5E7EB;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        
+        .message-bubble .source-block {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .message-bubble .source-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+        .message-bubble .source-item i { color: var(--primary); font-size: 12px; }
+        
+        .message-bubble .section-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 8px;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .message-bubble .section-title:first-child {
+            margin-top: 0;
+        }
+        
+        .message-bubble ul, .message-bubble ol {
+            padding-left: 20px;
+            margin: 2px 0 4px 0;
+        }
+        
+        .message-bubble li {
+            margin: 1px 0;
+        }
+        
+        .message-bubble .callout {
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin: 4px 0;
+            font-size: 13px;
+        }
+        
+        .message-bubble .callout-info {
+            background: #f0f4ff;
+            border-left: 3px solid #6C63FF;
+        }
+        
+        .message-bubble .callout-warning {
+            background: #fffbeb;
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .message-bubble .callout-success {
+            background: #ecfdf5;
+            border-left: 3px solid #10b981;
+        }
+        
+        .message-bubble .callout-danger {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #E5E7EB;
+        }
+        
+        .typing-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9CA3AF;
+            animation: typingBounce 1.4s infinite;
+        }
+        
+        .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        
+        .welcome {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .welcome .icon { font-size: 56px; color: var(--primary); margin-bottom: 16px; }
+        .welcome h4 { color: var(--text-primary); font-weight: 600; }
+        .welcome p { font-size: 15px; }
+        
+        .suggestion-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+        .suggestion-list .badge-suggestion {
+            background: white;
+            border: 1px solid #E5E7EB;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+        .suggestion-list .badge-suggestion:hover { border-color: var(--primary); color: var(--primary); background: #F5F3FF; }
+        
+        .chat-input {
+            padding: 16px 32px;
+            background: white;
+            border-top: 1px solid #E5E7EB;
+            flex-shrink: 0;
+        }
+        
+        .chat-input .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #F3F4F6;
+            border-radius: 14px;
+            padding: 4px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .chat-input .input-wrapper:focus-within {
+            border-color: var(--primary);
+            background: white;
+        }
+        
+        .chat-input .input-wrapper input {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            font-size: 15px;
+            outline: none;
+            color: var(--text-primary);
+        }
+        
+        .chat-input .input-wrapper input::placeholder { color: #9CA3AF; }
+        
+        .chat-input .input-wrapper .btn-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            margin-right: 4px;
+        }
+        
+        .chat-input .input-wrapper .btn-send:hover { background: var(--primary-dark); }
+        .chat-input .input-wrapper .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .message-bubble { max-width: 95%; }
+            .chat-messages { padding: 16px; }
+            .chat-input { padding: 12px 16px; }
+            .chat-header { padding: 12px 16px; }
+            .quick-actions { max-height: none; }
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-success { background: #d1fae5; color: #059669; }
+        .status-info { background: #dbeafe; color: #2563eb; }
+        .status-warning { background: #fee2e2; color: #dc2626; }
+        
+        /* Status & Trigger Explorer Styles */
+        .back-link {
+            cursor: pointer;
+            color: var(--primary);
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .back-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        .category-card, .status-card, .trigger-card {
+            transition: all 0.2s ease;
+        }
+        .category-card:hover, .status-card:hover, .trigger-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .status-card .badge-trigger {
+            background: #f093fb;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        .status-card .badge-pend {
+            background: #48bb78;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .no-results i {
+            font-size: 36px;
+            color: #dc2626;
+            margin-bottom: 12px;
+        }
+        .no-results p {
+            color: #666;
+            margin: 0;
+        }
+        
+        mark {
+            background: #fef9c3;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        /* Facility Search Styles */
+        .facility-search-container {
+            position: relative;
+            width: 100%;
+            margin-top: 12px;
+            padding: 0 5px;
+        }
+
+        .facility-search-container.show {
+            display: block !important;
+        }
+
+        .facility-search-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.06);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        .facility-search-input:focus {
+            border-color: #6C63FF;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .facility-search-input::placeholder {
+            color: #8B8FA7;
+        }
+
+        .facility-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1A1A2E;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 4px;
+        }
+
+        .facility-suggestions.show {
+            display: block;
+        }
+
+        .facility-suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .facility-suggestion-item:hover {
+            background: rgba(108, 99, 255, 0.2);
+        }
+
+        .facility-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .facility-suggestion-item .facility-name {
+            font-weight: 500;
+            color: white;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .facility-suggestion-item .facility-name mark {
+            background: #6C63FF;
+            color: white;
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        .facility-suggestion-item .facility-location {
+            font-size: 11px;
+            color: #8B8FA7;
+            margin-top: 2px;
+        }
+
+        /* Loading/status indicator */
+        .facility-suggestions .no-facility-results {
+            padding: 20px;
+            text-align: center;
+            color: #8B8FA7;
+            font-size: 14px;
+        }
+
+        .facility-suggestions .no-facility-results .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #6C63FF;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Facility Details Modal */
+        .facility-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .facility-modal.show {
+            display: flex;
+        }
+
+        .facility-modal-content {
+            background: #1A1A2E;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .facility-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 15px;
+        }
+
+        .facility-modal-header h3 {
+            color: white;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .facility-modal-close {
+            background: none;
+            border: none;
+            color: #8B8FA7;
+            font-size: 28px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .facility-modal-close:hover {
+            color: white;
+        }
+
+        .facility-detail-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .facility-detail-label {
+            color: #8B8FA7;
+            width: 40%;
+            font-size: 13px;
+        }
+
+        .facility-detail-value {
+            color: white;
+            width: 60%;
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        .no-facility-results {
+            padding: 20px;
+            text-align: center;
+            color: #8B8FA7;
+            font-size: 14px;
+        }
+
+        .facility-suggestions::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .facility-suggestions::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+
+        .facility-address {
+            font-size: 11px;
+            color: #6C63FF;
+            margin-top: 2px;
+            padding: 2px 8px;
+            background: rgba(108, 99, 255, 0.08);
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Google Modal Styles */
+        .google-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .google-modal.show {
+            display: flex;
+        }
+
+        .google-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .google-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #E5E7EB;
+            padding-bottom: 15px;
+        }
+
+        .google-modal-header h3 {
+            color: #1A1A2E;
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .google-modal-close {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 32px;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .google-modal-close:hover {
+            color: #333;
+        }
+
+        .google-modal-body {
+            padding: 0;
+        }
+
+        .quick-search-btn {
+            padding: 6px 14px;
+            background: #F3F4F6;
+            border: 1px solid #E5E7EB;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #1A1A2E;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-search-btn:hover {
+            background: #6C63FF;
+            color: white;
+            border-color: #6C63FF;
+            transform: translateY(-1px);
+        }
+
+        #googleSearchInput {
+            box-sizing: border-box;
+        }
+
+        #googleSearchInput:focus {
+            border-color: #6C63FF;
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .google-modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .google-modal-header h3 {
+                font-size: 16px;
+            }
+            
+            .quick-search-btn {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0" style="height: 100vh;">
+            <div class="col-md-3 col-lg-2 sidebar">
+                <div class="brand">
+                    <div>
+                        <h5>🦁 Simba</h5>
+                        <small>Intelligent Policy Assistant</small>
+                    </div>
+                </div>
+                
+                <button class="btn-new-chat" onclick="newChat()">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+                
+                <div class="filter-section">
+                    <label><i class="fas fa-filter me-1"></i>Filter Document</label>
+                    <select id="documentFilter">
+                        <option value="">All Documents</option>
+                    </select>
+                </div>
+                
+                <div class="quick-actions">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div class="quick-buttons">
+                        <div class="quick-btn" onclick="toggleCallAssistant()">
+                            <i class="fas fa-tasks"></i><span>Call Assistant</span>
+                        </div>
+                        <div id="callAssistant-options" style="display:none; margin-left:10px;">
+                            <div class="quick-btn" onclick="showCallAssistantOpening()"><i class="fas fa-microphone"></i><span>Opening Prompt</span></div>
+                            <div class="quick-btn" onclick="showCallAssistantHandling()"><i class="fas fa-comments"></i><span>Handling Responses</span></div>
+                            <div class="quick-btn" onclick="showCallAssistantClose()"><i class="fas fa-phone-slash"></i><span>Close Script</span></div>
+                        </div>
+                        <div class="quick-btn" onclick="showKeyResponsibilities()"><i class="fas fa-tasks"></i><span>Key Responsibilities</span></div>
+                        <div class="quick-btn" onclick="showRequestPhases()"><i class="fas fa-chart-line"></i><span>Request Phases</span></div>
+                        <div class="quick-btn" onclick="showFeeProcessing()"><i class="fas fa-dollar-sign"></i><span>Fee Processing</span></div>
+                        <div class="quick-btn" onclick="showHIPAA()"><i class="fas fa-shield-alt"></i><span>HIPAA Law</span></div>
+                        <div class="quick-btn" onclick="showANRProcessing()"><i class="fas fa-file-signature"></i><span>ANR Processing</span></div>
+                        <div class="quick-btn" onclick="showDocumentRetrieval()"><i class="fas fa-search"></i><span>Document Retrieval</span></div>
+                        <div class="quick-btn" onclick="showRequestTypes()"><i class="fas fa-question-circle"></i><span>Request Types</span></div>
+                        <div class="quick-btn" onclick="showNonCompliance()"><i class="fas fa-exclamation-triangle"></i><span>Non-Compliance</span></div>
+                        <div class="quick-btn" id="statusCodesMainBtn"><i class="fas fa-list-check"></i><span>Status Codes</span></div>
+                        <div class="quick-btn" id="triggerCodesMainBtn"><i class="fas fa-bolt"></i><span>Trigger Codes</span></div>
+
+                        <!-- ✅ ADD THE FACILITY BUTTON HERE -->
+                        <div class="quick-btn" onclick="showfacilities()">
+                            <i class="fas fa-building"></i><span>Facility</span>
+                        </div>
+
+                        <div id="context-indicator" style="display: none; margin: 8px 0; padding: 8px 12px; background: rgba(25, 118, 210, 0.15); border-radius: 6px; border-left: 3px solid #1976d2;">
+                            <strong style="color: white;">📍 Current Context:</strong> <span id="current-context" style="color: #8B8FA7;">None</span>
+                            <button onclick="clearAllContext()" style="margin-left: 10px; padding: 2px 8px; cursor: pointer; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 4px;">✕ Clear</button>
+                        </div>
+                        
+                        <div class="quick-btn" onclick="toggleCustodian()"><i class="fas fa-user-check"></i><span>Custodian Response</span></div>
+                        <div id="custodian-options" style="display:none; margin-left:10px;">
+                            <div class="quick-btn" onclick="showCustodianNotReceived()"><i class="fas fa-times-circle"></i><span>Not Received Request</span></div>
+                            <div class="quick-btn" onclick="toggleReceivedOptions()"><i class="fas fa-check-circle"></i><span>Received Request</span></div>
+                            <div id="received-options" style="display:none; margin-left:10px;">
+                                <div class="quick-btn" onclick="showCustodianPending()"><span>Pending</span></div>
+                                <div class="quick-btn" onclick="showCustodianInvoicing()"><span>Invoicing</span></div>
+                                <div class="quick-btn" onclick="showCustodianRejected()"><span>Rejected / Clarification</span></div>
+                                <div class="quick-btn" onclick="showCustodianDispatched()"><span>Dispatched</span></div>
+                                <div class="quick-btn" onclick="showCustodianDelayed()"><span>Delayed / Unresponsive</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ✅ FACILITY SEARCH CONTAINER - MOVED OUTSIDE quick-buttons -->
+                    <div class="facility-search-container" id="facilitySearchContainer" style="display: none; margin-top: 12px;">
+                        <input type="text" class="facility-search-input" id="facilitySearchInput" placeholder="Type facility name..." autocomplete="off">
+                        <div class="facility-suggestions" id="facilitySuggestions"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
+                    <div style="color: #8B8FA7; font-size: 12px;">
+                        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#34D399; margin-right:6px;"></span>
+                        Online
+                        <span style="float:right; font-size:11px;" id="docCount"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-9 col-lg-10 chat-area">
+                <div class="chat-header">
+                    <div class="title">
+                        <i class="fas fa-comment-dots"></i>
+                        Simba AI Assistant
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <!-- Google Search Button -->
+                        <button onclick="openGoogleSearch()" 
+                                style="padding: 6px 12px; background: rgba(108, 99, 255, 0.1); color: #6C63FF; border: 1px solid rgba(108, 99, 255, 0.2); border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;" 
+                                onmouseover="this.style.background='rgba(108, 99, 255, 0.2)'" 
+                                onmouseout="this.style.background='rgba(108, 99, 255, 0.1)'">
+                            <i class="fas fa-search" style="font-size: 13px;"></i>
+                            <span style="font-size: 12px;">Search</span>
+                        </button>
+                        
+                        <!-- User Info -->
+                        <div style="display: flex; align-items: center; gap: 8px; color: #6B7280; font-size: 13px; background: #F3F4F6; padding: 4px 12px 4px 8px; border-radius: 20px;">
+                            <i class="fas fa-user-circle" style="font-size: 18px; color: #6C63FF;"></i>
+                            <span id="userEmail" style="color: #1A1A2E; font-weight: 500;">User</span>
+                        </div>
+                        
+                        <!-- Logout Button -->
+                        <button onclick="logoutUser()" style="padding: 6px 14px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-sign-out-alt" style="font-size: 11px;"></i> Logout
+                        </button>
+                        
+                        <!-- Active Status -->
+                        <span class="badge-online">
+                            <span class="dot"></span> Active
+                        </span>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome">
+                        <div class="icon"><i class="fas fa-robot"></i></div>
+                        <h4>How can I help you today?</h4>
+                        <p>Ask me about SOP procedures, policies, and processes.</p>
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <div class="input-wrapper">
+                        <input type="text" id="chatInput" placeholder="Ask a question..." onkeypress="if(event.key==='Enter') sendMessage()" autofocus>
+                        <button class="btn-send" onclick="sendMessage()" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // ============================================================
+        // GOOGLE SEARCH FUNCTIONS
+        // ============================================================
+
+        function openGoogleSearch() {
+            const modal = document.getElementById('googleModal');
+            const input = document.getElementById('googleSearchInput');
+            const results = document.getElementById('googleSearchResults');
+            const iframe = document.getElementById('googleIframe');
+            const fallback = document.getElementById('googleFallbackMessage');
+            
+            modal.classList.add('show');
+            results.style.display = 'none';
+            iframe.style.display = 'none';
+            fallback.style.display = 'block';
+            
+            // Focus on the input after a small delay
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+            
+            // Clear previous search
+            input.value = '';
+        }
+
+        function closeGoogleModal() {
+            document.getElementById('googleModal').classList.remove('show');
+        }
+
+        function performGoogleSearch() {
+            const input = document.getElementById('googleSearchInput');
+            const query = input.value.trim();
+            
+            if (!query) {
+                showToast('Please enter a facility name to search', 'warning');
+                return;
+            }
+            
+            // Build Google search URL
+            const searchQuery = encodeURIComponent(query + ' medical facility');
+            const googleUrl = `https://www.google.com/search?q=${searchQuery}`;
+            
+            // Show results section
+            const results = document.getElementById('googleSearchResults');
+            const iframe = document.getElementById('googleIframe');
+            const fallback = document.getElementById('googleFallbackMessage');
+            const linkElement = document.getElementById('googleSearchLink');
+            const linkText = document.getElementById('searchResultLink');
+            
+            results.style.display = 'block';
+            
+            // Update link text
+            linkText.textContent = `Searching for: "${query}"`;
+            linkElement.href = googleUrl;
+            
+            // Try to load iframe (Google might block this)
+            try {
+                iframe.src = googleUrl;
+                iframe.style.display = 'block';
+                fallback.style.display = 'none';
+            } catch (e) {
+                // If iframe fails, show fallback
+                iframe.style.display = 'none';
+                fallback.style.display = 'block';
+                // Update fallback message
+                fallback.innerHTML = `
+                    <i class="fas fa-external-link-alt" style="font-size: 48px; color: #6C63FF; margin-bottom: 16px; display: block;"></i>
+                    <p style="font-size: 14px; margin-bottom: 8px; color: #1A1A2E;">Searching Google for: <strong>"${escapeHtml(query)}"</strong></p>
+                    <p style="font-size: 12px; color: #6B7280; margin-bottom: 12px;">Google search will open in a new tab.</p>
+                    <a href="${googleUrl}" target="_blank" style="display: inline-block; padding: 10px 24px; background: #6C63FF; color: white; border-radius: 8px; text-decoration: none; font-weight: 500;">
+                        <i class="fas fa-external-link-alt"></i> Open Google Search
+                    </a>
+                `;
+            }
+            
+            // Also open in new tab for convenience
+            window.open(googleUrl, '_blank');
+            
+            showToast(`Searching Google for "${query}"`, 'success');
+        }
+
+        function quickGoogleSearch(suffix) {
+            const input = document.getElementById('googleSearchInput');
+            const currentQuery = input.value.trim() || 'facility';
+            input.value = `${currentQuery} ${suffix}`;
+            performGoogleSearch();
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeGoogleModal();
+            }
+        });
+
+        // ============================================================
+        // FACILITY SEARCH FUNCTIONS
+        // ============================================================
+
+        let facilitySearchTimeout = null;
+        let isFacilitySearchActive = false;
+
+        function showfacilities() {
+            const container = document.getElementById('facilitySearchContainer');
+            const searchInput = document.getElementById('facilitySearchInput');
+            
+            // If container doesn't exist, return
+            if (!container) {
+                console.error('Facility search container not found');
+                return;
+            }
+            
+            // Toggle visibility
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                searchInput.value = '';
+                document.getElementById('facilitySuggestions').classList.remove('show');
+                isFacilitySearchActive = false;
+                return;
+            }
+            
+            container.style.display = 'block';
+            // Small delay to ensure the container is rendered before focusing
+            setTimeout(() => {
+                searchInput.focus();
+            }, 100);
+            isFacilitySearchActive = true;
+            
+            // Clear any existing suggestions
+            document.getElementById('facilitySuggestions').classList.remove('show');
+        }
+
+        function searchFacilities(query) {
+            if (!query || query.length < 1) {
+                document.getElementById('facilitySuggestions').classList.remove('show');
+                return;
+            }
+            
+            // Show loading state
+            const suggestionsContainer = document.getElementById('facilitySuggestions');
+            suggestionsContainer.innerHTML = `<div class="no-facility-results">🔍 Searching...</div>`;
+            suggestionsContainer.classList.add('show');
+            
+            fetch(`/api/facilities/search?q=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data || !data.facilities) {
+                        suggestionsContainer.innerHTML = `<div class="no-facility-results">No facilities found matching "${escapeHtml(query)}"</div>`;
+                        suggestionsContainer.classList.add('show');
+                        return;
+                    }
+                    
+                    if (data.facilities.length === 0) {
+                        suggestionsContainer.innerHTML = `<div class="no-facility-results">No facilities found matching "${escapeHtml(query)}"</div>`;
+                        suggestionsContainer.classList.add('show');
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.facilities.forEach(facility => {
+                        const highlightedName = highlightMatch(facility.name || '', query);
+                        const address = facility.address || '';
+                        const location = [facility.primary_city, facility.primary_state].filter(Boolean).join(', ');
+                        const score = facility.score || 0;
+                        
+                        // Add a small badge for high relevance
+                        let badge = '';
+                        if (score >= 100) {
+                            badge = '<span style="background: #34D399; color: #065F46; font-size: 10px; padding: 1px 8px; border-radius: 10px; margin-left: 8px;">Exact</span>';
+                        } else if (score >= 50) {
+                            badge = '<span style="background: #60A5FA; color: #1E3A5F; font-size: 10px; padding: 1px 8px; border-radius: 10px; margin-left: 8px;">Match</span>';
+                        }
+                        
+                        html += `
+                            <div class="facility-suggestion-item" onclick="selectFacility('${escapeJs(facility.name || '')}')">
+                                <div class="facility-name">
+                                    ${highlightedName}
+                                    ${badge}
+                                </div>
+                                ${address ? `<div class="facility-address">🏢 ${escapeHtml(address)}</div>` : ''}
+                                ${location ? `<div class="facility-location">📍 ${escapeHtml(location)}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    suggestionsContainer.innerHTML = html;
+                    suggestionsContainer.classList.add('show');
+                })
+                .catch(error => {
+                    console.error('Error searching facilities:', error);
+                    suggestionsContainer.innerHTML = `
+                        <div class="no-facility-results" style="color: #ef4444;">
+                            <i class="fas fa-exclamation-circle"></i> Error searching facilities. Please try again.
+                            <br><small style="color: #8B8FA7;">${error.message || ''}</small>
+                        </div>
+                    `;
+                    suggestionsContainer.classList.add('show');
+                });
+        }
+        function highlightMatch(text, query) {
+            if (!query) return escapeHtml(text);
+            
+            const queryLower = query.toLowerCase();
+            const textLower = text.toLowerCase();
+            
+            // Find the best match position
+            let startIndex = textLower.indexOf(queryLower);
+            
+            // If not found, try to find a word boundary match
+            if (startIndex === -1) {
+                const words = textLower.split(' ');
+                for (let i = 0; i < words.length; i++) {
+                    if (words[i].startsWith(queryLower)) {
+                        // Find the position of this word in the original text
+                        let pos = 0;
+                        for (let j = 0; j < i; j++) {
+                            pos += words[j].length + 1;
+                        }
+                        startIndex = pos;
+                        break;
+                    }
+                }
+            }
+            
+            if (startIndex === -1) {
+                return escapeHtml(text);
+            }
+            
+            const endIndex = startIndex + query.length;
+            const before = escapeHtml(text.substring(0, startIndex));
+            const match = escapeHtml(text.substring(startIndex, endIndex));
+            const after = escapeHtml(text.substring(endIndex));
+            
+            return `${before}<mark style="background: #6C63FF; color: white; padding: 0 2px; border-radius: 2px;">${match}</mark>${after}`;
+        }
+
+        function selectFacility(name) {
+            // Clear search and hide suggestions
+            document.getElementById('facilitySearchInput').value = name;
+            document.getElementById('facilitySuggestions').classList.remove('show');
+            
+            // Fetch facility details
+            fetch(`/api/facilities/details?name=${encodeURIComponent(name)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showToast(data.error, 'error');
+                        return;
+                    }
+                    showFacilityDetails(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching facility details:', error);
+                    showToast('Error fetching facility details', 'error');
+                });
+        }
+
+        // function showFacilityDetails(facility) {
+        //     const modal = document.getElementById('facilityModal');
+        //     const content = document.getElementById('facilityModalContent');
+            
+        //     // Build details HTML
+        //     const details = [
+        //         { label: 'Facility Name', value: facility.name },
+        //         { label: 'Time Zone', value: facility.time_zone },
+        //         { label: 'Primary City', value: facility.primary_city },
+        //         { label: 'Primary State', value: facility.primary_state },
+        //         { label: 'Primary Phone', value: facility.primary_phone },
+        //         { label: 'Serve City', value: facility.serve_city },
+        //         { label: 'Serve State', value: facility.serve_state },
+        //         { label: 'Serve Phone', value: facility.serve_phone }
+        //     ];
+            
+        //     let html = '';
+        //     details.forEach(detail => {
+        //         if (detail.value) {
+        //             html += `
+        //                 <div class="facility-detail-row">
+        //                     <div class="facility-detail-label">${escapeHtml(detail.label)}</div>
+        //                     <div class="facility-detail-value">${escapeHtml(detail.value)}</div>
+        //                 </div>
+        //             `;
+        //         }
+        //     });
+            
+        //     document.getElementById('facilityModalTitle').textContent = facility.name;
+        //     document.getElementById('facilityDetailsBody').innerHTML = html;
+        //     modal.classList.add('show');
+        // }
+
+        function showFacilityDetails(facility) {
+            const modal = document.getElementById('facilityModal');
+            
+            // Build details HTML with Address included
+            const details = [
+                { label: 'Facility Name', value: facility.name },
+                { label: 'Time Zone', value: facility.time_zone },
+                { label: 'Address', value: facility.address },  // ✅ ADDED
+                { label: 'Primary City', value: facility.primary_city },
+                { label: 'Primary State', value: facility.primary_state },
+                { label: 'Primary Phone', value: facility.primary_phone },
+                { label: 'Serve City', value: facility.serve_city },
+                { label: 'Serve State', value: facility.serve_state },
+                { label: 'Serve Phone', value: facility.serve_phone }
+            ];
+            
+            let html = '';
+            details.forEach(detail => {
+                if (detail.value) {
+                    // Special styling for Address to make it more prominent
+                    let extraClass = '';
+                    if (detail.label === 'Address') {
+                        extraClass = ' style="color: #6C63FF; font-weight: 500;"';
+                    }
+                    html += `
+                        <div class="facility-detail-row">
+                            <div class="facility-detail-label">${escapeHtml(detail.label)}</div>
+                            <div class="facility-detail-value"${extraClass}>${escapeHtml(detail.value)}</div>
+                        </div>
+                    `;
+                }
+            });
+            
+            document.getElementById('facilityModalTitle').textContent = facility.name;
+            document.getElementById('facilityDetailsBody').innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        function closeFacilityModal() {
+            document.getElementById('facilityModal').classList.remove('show');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeJs(text) {
+            if (!text) return '';
+            return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        // Event Listeners for facility search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('facilitySearchInput');
+            
+            if (searchInput) {
+                let typingTimer;
+                const doneTypingInterval = 200; // milliseconds
+                
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(typingTimer);
+                    const query = this.value.trim();
+                    
+                    // Show typing indicator if query length > 0
+                    if (query.length > 0) {
+                        const suggestionsContainer = document.getElementById('facilitySuggestions');
+                        suggestionsContainer.innerHTML = `<div class="no-facility-results" style="color: #8B8FA7;">🔍 Searching for "${escapeHtml(query)}"...</div>`;
+                        suggestionsContainer.classList.add('show');
+                    }
+                    
+                    typingTimer = setTimeout(() => {
+                        searchFacilities(query);
+                    }, doneTypingInterval);
+                });
+                
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        document.getElementById('facilitySuggestions').classList.remove('show');
+                        this.value = '';
+                    }
+                    if (e.key === 'Enter') {
+                        const suggestions = document.querySelectorAll('.facility-suggestion-item');
+                        if (suggestions.length > 0) {
+                            suggestions[0].click();
+                        }
+                    }
+                });
+                
+                // Close suggestions when clicking outside
+                document.addEventListener('click', function(e) {
+                    const container = document.getElementById('facilitySearchContainer');
+                    if (container && !container.contains(e.target)) {
+                        document.getElementById('facilitySuggestions').classList.remove('show');
+                    }
+                });
+            }
+        });
+
+        // Keyboard shortcut: Ctrl+F to open facility search
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                showfacilities();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFacilityModal();
+            }
+        });
+
+
+        // Add this to your JavaScript section
+        function logoutUser() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        // Get user info on load
+        function getUserInfo() {
+            fetch('/api/auth/check')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.authenticated && data.user) {
+                        document.getElementById('userEmail').textContent = data.user.email || 'User';
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Call this in DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... existing code ...
+            getUserInfo();
+        });
+
+        // ============================================
+        // CORE VARIABLES
+        // ============================================
+        let sessionId = localStorage.getItem('sessionId') || 'session_' + Date.now();
+        let isProcessing = false;
+        let currentContext = null;
+        let isCallAssistantOpen = false;
+        let isCustodianOpen = false;
+        let isReceivedOpen = false;
+        
+        // Status & Trigger Explorer Variables
+        let allStatusCodesFlat = [];
+        let allTriggersFlat = [];
+        let statusSearchDisplayed = false;
+        let statusExplorerDisplayed = false;
+        let searchDisplayed = false;
+        let explorerDisplayed = false;
+        
+        localStorage.setItem('sessionId', sessionId);
+        
+        // ============================================
+        // CORE CHAT FUNCTIONS
+        // ============================================
+        
+        function askQuestion(query) {
+            document.getElementById('chatInput').value = query;
+            sendMessage();
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message || isProcessing) return;
+            
+            input.value = '';
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            addMessage('user', message);
+            showTyping();
+            isProcessing = true;
+            
+            const filterDoc = document.getElementById('documentFilter').value || null;
+            
+            let queryWithContext = message;
+            if (currentContext) {
+                queryWithContext = `[Context: ${currentContext}] ${message}`;
+            }
+            
+            // CHANGE THIS URL - add /api prefix
+            fetch('/api/chat', {  // Changed from '/api/chat' to match Flask route
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: queryWithContext,  // Changed from 'question' to 'query'
+                    session_id: sessionId,
+                    filter_document: filterDoc  // Changed from 'document_filter'
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                removeTyping();
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+                
+                if (data.error) {
+                    addMessage('assistant', '❌ Error: ' + data.error);
+                } else if (typeof data.answer === 'string') {
+                    addMessage('assistant', data.answer, data.sources, data.images);
+                } else {
+                    addMessage('assistant', '❌ Error: Unexpected response format');
+                }
+                isProcessing = false;
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                removeTyping();
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+                addMessage('assistant', '❌ Error: Could not connect to server. Please try again.');
+                isProcessing = false;
+            });
+        }        
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function addMessage(type, content, sources = null, images = null) {
+            const messages = document.getElementById('chatMessages');
+            const welcome = messages.querySelector('.welcome');
+            if (welcome) welcome.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let html = `<div class="message-bubble">`;
+            html += `<div>${content.replace(/\n/g, '<br>')}</div>`;
+            
+            if (sources && sources.length > 0) {
+                html += `<div class="source-block">`;
+                html += `<div style="font-weight:600; font-size:12px; color:#6B7280; margin-bottom:4px;"><i class="fas fa-book-open me-1"></i>Sources:</div>`;
+                sources.slice(0, 3).forEach(source => {
+                    const docName = source.document || 'Unknown';
+                    const section = source.topic_path || source.section || 'Unknown';
+                    const page = source.page ? ` (p.${source.page}${source.page_end && source.page_end !== source.page ? '-' + source.page_end : ''})` : '';
+                    html += `<div class="source-item"><i class="fas fa-file-alt"></i> ${escapeHtml(docName)} - ${escapeHtml(section)}${page}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (images && images.length > 0) {
+                html += `<div class="sop-image-block">`;
+                html += `<div class="sop-image-title"><i class="fas fa-images"></i> Related SOP images</div>`;
+                images.forEach((image, index) => {
+                    const label = image.topic || image.document || `SOP image ${index + 1}`;
+                    html += `<figure class="sop-image-card">`;
+                    html += `<a href="${encodeURI(image.url)}" target="_blank" rel="noopener noreferrer">`;
+                    html += `<img src="${encodeURI(image.url)}" alt="${escapeHtml(label)}" loading="lazy">`;
+                    html += `</a>`;
+                    html += `<figcaption>${escapeHtml(label)}${image.page ? ` (p.${image.page})` : ''}</figcaption>`;
+                    html += `</figure>`;
+                });
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            messageDiv.innerHTML = html;
+            messages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function addFormattedMessage(content) {
+            const messages = document.getElementById('chatMessages');
+            const welcome = messages.querySelector('.welcome');
+            if (welcome) welcome.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            
+            let html = `<div class="message-bubble" style="padding: 10px 16px;">`;
+            html += content;
+            html += `</div>`;
+            messageDiv.innerHTML = html;
+            messages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function showTyping() {
+            const messages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'message assistant';
+            typingDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="typing-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
+            `;
+            messages.appendChild(typingDiv);
+            scrollToBottom();
+        }
+        
+        function removeTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+        
+        function scrollToBottom() {
+            const messages = document.getElementById('chatMessages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function newChat() {
+            sessionId = 'session_' + Date.now();
+            localStorage.setItem('sessionId', sessionId);
+            currentContext = null;
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="welcome">
+                    <div class="icon"><i class="fas fa-robot"></i></div>
+                    <h4>How can I help you today?</h4>
+                    <p>Ask me about SOP procedures, policies, and processes.</p>
+                </div>
+            `;
+            document.getElementById('chatInput').focus();
+            document.getElementById('context-indicator').style.display = 'none';
+        }
+        
+        function loadDocuments() {
+            // CHANGE THIS URL - add /api prefix
+            fetch('/api/documents')  // Changed from '/api/documents'
+                .then(response => response.json())
+                .then(data => {
+                    if (data.documents) {
+                        const select = document.getElementById('documentFilter');
+                        const countSpan = document.getElementById('docCount');
+                        select.innerHTML = '<option value="">All Documents</option>';
+                        data.documents.forEach(doc => {
+                            const option = document.createElement('option');
+                            option.value = doc.name;
+                            option.textContent = doc.name;
+                            select.appendChild(option);
+                        });
+                        countSpan.textContent = data.documents.length + ' docs';
+                    }
+                })
+                .catch(() => {});
+        }
+        
+        // ============================================
+        // TOGGLE FUNCTIONS
+        // ============================================
+        
+        function toggleCallAssistant() {
+            const options = document.getElementById('callAssistant-options');
+            isCallAssistantOpen = !isCallAssistantOpen;
+            options.style.display = isCallAssistantOpen ? 'block' : 'none';
+        }
+        
+        function toggleCustodian() {
+            const options = document.getElementById('custodian-options');
+            isCustodianOpen = !isCustodianOpen;
+            options.style.display = isCustodianOpen ? 'block' : 'none';
+        }
+        
+        function toggleReceivedOptions() {
+            const options = document.getElementById('received-options');
+            isReceivedOpen = !isReceivedOpen;
+            options.style.display = isReceivedOpen ? 'block' : 'none';
+        }
+        
+        function setContext(context) {
+            currentContext = context;
+            const indicator = document.getElementById('context-indicator');
+            const contextSpan = document.getElementById('current-context');
+            if (context) {
+                indicator.style.display = 'block';
+                contextSpan.textContent = context;
+            } else {
+                indicator.style.display = 'none';
+                contextSpan.textContent = 'None';
+            }
+        }
+        
+        function clearAllContext() {
+            currentContext = null;
+            const indicator = document.getElementById('context-indicator');
+            const contextSpan = document.getElementById('current-context');
+            indicator.style.display = 'none';
+            contextSpan.textContent = 'None';
+        }
+        
+        // ============================================
+        // TOAST NOTIFICATION
+        // ============================================
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                padding: 10px 20px; border-radius: 8px; z-index: 1000;
+                font-size: 14px; font-weight: 500;
+                background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#6C63FF'};
+                color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                animation: fadeIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ============================================
+        // STATUS CODES EXPLORER FUNCTIONS
+        // ============================================
+        
+        function getStatusCodesForCategory(category) {
+            const statusData = {
+                "Affidavit-Related": [
+                    {description: "2nd Notice – Use when sending a second Notice to the facility for pending affidavit or records.",code: "2736",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit - No Affidavit - Close – Use when all 3 attempts have been made for the missing affidavit.",code: "2699",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Affidavit - No Records 1st Verbal – Use after the first verbal confirmation from the facility that no records exist.",code: "2686",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit - No Records 2nd Verbal – Use after the second verbal confirmation that no records are available.",code: "2768",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit - No Records 3rd Verbal – Use after the third verbal confirmation of no records.",code: "2688",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit - No Records 4th Verbal - Close – Use after the fourth verbal confirmation and the case is closed due to no records.",code: "2689",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Affidavit No Records - Close – Use when the facility provides written confirmation that no records exist and the case is closed (patient never existed).",code: "2709",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit - No Recs - Destroyed/Lost/Purged - Close – Use when records were destroyed, lost, or purged and cannot be retrieved.",code: "2691",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit No Recs - DOS - Close – Use when no records exist for the specific Date of Service (DOS).",code: "2601",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit Not Received - 1st – First attempt to obtain affidavit.",code: "3612",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit Not Received - 2nd – Second follow-up attempt.",code: "3613",pendOrTrigger: "Pend 5"},
+                    {description: "Affidavit Not Received - 3rd – Final follow-up attempt.",code: "3614",pendOrTrigger: "Pend 5"}
+                ],
+                "Authorization-Related": [
+                    {description: "Authorization - Dates Needed – Use when the authorization form is missing required service dates.",code: "2748",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - DOL Required – Use when the Date of Loss (DOL) is missing from the authorization.",code: "2537",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Electronic Signature Issue – Use when the electronic signature on the authorization is invalid, missing, or not accepted by the facility.",code: "3556",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Illegible – Use when the authorization form is unreadable due to poor print quality or handwriting.",code: "3354",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Incomplete – Use when the authorization is missing required fields or sections.",code: "3360",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - LOR – Use when a Letter of Representation is required but not provided.",code: "3333",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing Name/Entity to release records – Use when the form does not specify the entity authorized to release the records.",code: "3521",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing or Invalid Claim or Provider/Policy # – Use when the claim number, provider name, or policy number is missing or incorrect.",code: "3519",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing patient information – Use when patient details such as name, DOB, or ID are missing from the authorization.",code: "3516",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing Purpose of Disclosure – Use when the reason for requesting the records is not stated on the form.",code: "3518",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing Record Type Requested – Use when the specific type of records being requested is not indicated.",code: "3331",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing Redisclosure – Use when the redisclosure clause is missing, which may be required by certain facilities.",code: "3397",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Missing Signature – Use when the authorization form lacks the patient’s or legal representative’s signature.",code: "3355",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Must Complete Facility Auth Form – Use when the facility requires its own specific authorization form to be completed.",code: "2542",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Patient info doesn't match – Use when the patient information on the authorization does not match the request or facility records.",code: "3332",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Power of Attorney – Use when a Power of Attorney document is required to validate the authorization.",code: "3366",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Psych/Sensitive – Use when the records requested are sensitive (e.g., psychiatric, HIV, substance abuse) and require special authorization.",code: "2548",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Subpoena Required - Close – Use when the facility requires a subpoena instead of an authorization, and the case is closed.",code: "2549",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Authorization - Disclosing Entity/facility not listed – Use when the facility being asked to release records is not named on the authorization form.",code: "2544",pendOrTrigger: "Sent - Client Relations"}
+                ],
+                "Call-Related": [
+                    { description: "Calls – Excessive Hold Time – Used when calls to the facility result in long hold times, impacting communication efficiency.", code: "2564", pendOrTrigger: "Pend 5" },
+                    { description: "Calls – Expecting Return Call – Indicates that a message was left and a return call from the facility is expected.", code: "2586", pendOrTrigger: "Pend 5" },
+                ],
+                "Order-Related": [
+                    { description: "Exact Same Order – Close – Used when a duplicate order has been identified and the case is closed to avoid redundancy.", code: "3379", pendOrTrigger: "Sent - Client Relations" },
+                ],
+                "Facility Status & Communication": [
+                    {description: "Facility – 3rd Party Requests Not Accepted – Close – Facility does not accept requests from third-party entities; case closed.",code: "3315",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility Billing Office Only – Close – Facility only handles billing inquiries, not medical records; case closed.",code: "2386",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility Closed – Indicates the facility is temporarily closed.",code: "2565",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Correspondence Received – Confirmation that correspondence from the facility has been received.",code: "3373",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Delay – 1st Status – First notice of delay from the facility in processing the request.",code: "3505",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Delay – 2nd Status – Second follow-up indicating continued delay.",code: "3507",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Delay – 3rd Status – Third update showing ongoing delay.",code: "3508",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Delay – 4th Status – Fourth status update confirming persistent delay.",code: "3509",pendOrTrigger: "Pend 5"},
+                    {description: "Facility Delay – Final Status – Final update indicating resolution or closure due to delay.",code: "3506",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility Delay – Freehand – Custom note used to document a delay not covered by standard codes.",code: "3711",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Email Required – Facility requires communication via email to proceed.",code: "2555",pendOrTrigger: "Pend 5"},
+                    {description: "Facility in Progress – Indicates that the facility is actively working on the request.",code: "2649",pendOrTrigger: "Pend 5"},
+                    {description: "Facility in Progress – Freehand – Custom note indicating progress, used when standard codes don’t apply.",code: "3710",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Known for Delay – Facility has a history of delayed responses or slow processing.",code: "2612",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – More Information Needed – Facility has requested additional details to proceed.",code: "2781",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility – No Status Before Depo – No update received from the facility before a scheduled deposition.",code: "2566",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Order Sent ROI – Records request has been sent to the Release of Information (ROI) department.",code: "2675",pendOrTrigger: "Sent - ROI1, 2, or 3"},
+                    {description: "Facility – Patient Still in Treatment – No Partial Records – Hold – Patient is still receiving treatment; facility won’t release partial records.",code: "3480",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Permanently Closed – Close – Facility is permanently shut down; case closed.",code: "3380",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility – Personal Business – Close – This is the record subject’s personal business and cannot release their own records.",code: "3688",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Facility – Records in Storage – Records are stored, which may delay retrieval.",code: "2629",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Requested More Time – Facility has asked for an extension to fulfill the request.",code: "3527",pendOrTrigger: "Pend 5"},
+                    {description: "Facility – Unable to Leave Message – Unable to leave a voicemail due to full inbox or no answering system.",code: "3433",pendOrTrigger: "Pend 5"}
+                ],
+                "Fax-Related": [
+                    { description: "Fax Confirmation – Confirmation that a fax was successfully sent or received.", code: "3621", pendOrTrigger: "Pend 5" },
+                ],
+                "Film-Related": [
+                    { description: "Film – Breakdown Available – Facility has confirmed that a breakdown of films is available for review.", code: "2650", pendOrTrigger: "Pend 5 or Sent-Xray Desk" },
+                    { description: "Film – Breakdown Faxed – The film breakdown has been faxed to the requesting party.", code: "2974", pendOrTrigger: "Pend 5" },
+                    { description: "Film – No Breakdown – Facility confirms that no breakdown of films is available.", code: "2977", pendOrTrigger: "Pend 5 or Sent-Checks" }
+                ],
+                "Follow-Up & Messaging": [
+                    {description: "Final Notice – Final attempt or warning issued to the facility before escalation or closure.",code: "2737",pendOrTrigger: "Pend 5"},
+                    {description: "Left 1st Message – First voicemail or message left for the facility.",code: "2575",pendOrTrigger: "Pend 5"},
+                    {description: "Left 2nd Message – Second attempt to contact the facility via voicemail or message.",code: "2576",pendOrTrigger: "Pend 5"},
+                    {description: "Left 3rd Message / 2nd Notice – Third message left, also serving as a second formal notice.",code: "2577",pendOrTrigger: "Pend 5"},
+                    {description: "Left 4th Message – Supervisor – Fourth message left, typically escalated to a supervisor.",code: "3510",pendOrTrigger: "Pend 5"},
+                    {description: "Left 5th Message / Final Notice – Fifth and final message left before further action or closure.",code: "2578",pendOrTrigger: "Pend 5"}
+                ],
+                "Invoice & Billing": [
+                    { description: "Invoice Forthcoming – Facility has confirmed that an invoice will be sent soon", code: "2679", pendOrTrigger: "Pend 5" },
+                    { description: "Invoice Received – Invoice has been received and logged", code: "3341", pendOrTrigger: "Pend 5" },
+                    { description: "Invoice / Page Count Approval Needed – Invoice or page count requires client approval before proceeding", code: "3375", pendOrTrigger: "Sent-Client Relations" }
+                ],
+                "New Order": [
+                    { description: "New Order – Not a Close – A new order has been created, but the previous request remains open.", code: "3389", pendOrTrigger: "Pend 5" },
+                    { description: "New Order Client Notice – CLOSE – A new order was created and the client has been notified; case closed", code: "2722", pendOrTrigger: "Depends on the region, see training material" }
+                ],
+                "Non-Compliance": [
+                    { description: "Non-Comp – Hold for Client Response – Facility is non-compliant; request is on hold pending client instructions", code: "2739", pendOrTrigger: "Sent-Client Relations" },
+                    { description: "Final Notice Sent - SDT", code: "NC-FINAL", pendOrTrigger: "Trigger: SENT-NON-COMPLIANCE REVIEW" },
+                    { description: "Non-Compliant - Hold for Client", code: "NC-HOLD", pendOrTrigger: "Trigger: SENT-ESCALATE REVIEW" }
+                ],
+                "Records & Request": [
+                    {description: "Records Included w/Another – Close – Records were already included in another request; this case is closed.",code: "2648",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Records Sent to ABI – Records have been forwarded to ABI.",code: "2644",pendOrTrigger: "Pend 5"},
+                    {description: "Request – Faxed to Facility – Request was sent to the facility via fax.",code: "2666",pendOrTrigger: "Pend 5"},
+                    {description: "Request – Sent to Facility – Request was sent to the facility via mail (physical).",code: "2902",pendOrTrigger: "Pend 5"},
+                    {description: "Research – Required – Additional research is needed to proceed with the request.",code: "3396",pendOrTrigger: "Pend 5"},
+                    {description: "Resubmitted – Request w/Needed Documents – Request has been resubmitted with missing or required documents.",code: "2594",pendOrTrigger: "Pend 5"},
+                    {description: "ROI – In Progress – Release of Information process is currently underway at the facility.",code: "2806",pendOrTrigger: "Sent - ROI1, 2, or 3"}
+                ],
+                "Service of Process (Serve)": [
+                    { description: "Serve – New Address – Service is being attempted at a newly identified address. Same facility name", code: "3312", pendOrTrigger: "Depends on the region, see training material" },
+                    { description: "Serve – New Agent of Service – ", code: "2510", pendOrTrigger: "Depends on the region, see training material" },
+                    { description: "Serve – Personal Appearance – CLOSE – ", code: "3421", pendOrTrigger: "Sent-Client Relations" }
+                ],
+                "Subpoena Rejection & Objection": [
+                    {description: "Subpoena – Objection Received – Facility or entity has formally objected to the subpoena.",code: "3110",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Auth Required – Subpoena rejected due to missing authorization.",code: "3345",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Auth Required – Out of State – Close – Authorization required for out-of-state subpoena; case closed.",code: "2754",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Federal Entity – Close – Subpoena rejected because the entity is federal and requires special handling; case closed.",code: "2516",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Incomplete – Close – Subpoena was incomplete; case closed.",code: "3347",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Incorrect Address – Subpoena rejected due to wrong address.",code: "3693",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Letter of Representation Required – Facility requires a letter of representation to process the subpoena.",code: "3413",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Missing or Inaccurate Patient Info – Close – Subpoena rejected due to missing or incorrect patient information; case closed.",code: "3353",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Missing Record Type Requested – Close – Subpoena rejected because it didn’t specify the type of records; case closed.",code: "3351",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Original Signature Needed – Subpoena rejected because an original (wet) signature is required.",code: "2752",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Patient Info Doesn’t Match – Patient information on the subpoena doesn’t match facility records.",code: "3595",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Psych/Sensitive – Subpoena rejected due to sensitive nature of records (e.g., psychiatric, HIV, etc.).",code: "3485",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – Statement of Assurance Required – Facility requires a statement of assurance before releasing records.",code: "3352",pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Subpoena Rejected – VA – Close – Subpoena rejected by the Veterans Affairs facility; case closed.",code: "2863",pendOrTrigger: "Sent - Client Relations"}
+                ],
+                "VPU/VTC": [
+                    {description: "VPU – When facility informs that records are ready for pick-up.",code: "2828",pendOrTrigger: "NA"},
+                    {description: "VPU – Affidavit of No Records – ANR is ready for pickup.",code: "2830",pendOrTrigger: "NA"},
+                    {description: "VPU – No X-rays – Affidavit of no x-ray is ready for pickup.",code: "2829",pendOrTrigger: "NA"},
+                    {description: "VTC – Records are ready and executive will copy them at facility.",code: "2832",pendOrTrigger: "NA"},
+                    {description: "VTC – No X-rays – ANX ready for copy at facility.",code: "2831",pendOrTrigger: "NA"},
+                    {description: "Reproductive Health Rule - Attestation/Auth Needed.",code: "3734",pendOrTrigger: "NA"},
+                    {description: "Film - Downloaded Images.",code: "3700",pendOrTrigger: "NA"},
+                    {description: "Internal - Solcom Return.",code: "3689",pendOrTrigger: "NA"},
+                    {description: "New Order - Auth Verified - Close.",code: "3652",pendOrTrigger: "NA"},
+                    {description: "Authorization - Power of Attorney Notary.",code: "3648",pendOrTrigger: "NA"},
+                    {description: "Research - Alternate Contact Not Available.",code: "3618",pendOrTrigger: "NA"},
+                    {description: "Research - Alternate Contact Located.",code: "3617",pendOrTrigger: "NA"},
+                    {description: "Facility - Records/Correspondence in Transit.",code: "3585",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Past Due Letter.",code: "3577",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Aged - Suspended.",code: "3572",pendOrTrigger: "NA"},
+                    {description: "Request - Certified Mail.",code: "3529",pendOrTrigger: "NA"},
+                    {description: "Confirmation - Still in Process.",code: "3422",pendOrTrigger: "NA"},
+                    {description: "Case Settled - Facility Letter.",code: "3414",pendOrTrigger: "NA"},
+                    {description: "Records Received - No Invoice.",code: "3395",pendOrTrigger: "NA"},
+                    {description: "Records Received - Invoice Exceeds Limit.",code: "3387",pendOrTrigger: "NA"},
+                    {description: "Confirmation - Request Received.",code: "3372",pendOrTrigger: "NA"},
+                    {description: "DO NOT USE - Client Contact - Status Request/Training.",code: "3371",pendOrTrigger: "NA"},
+                    {description: "Records Sent To Client - Confirmed Tracking - Close.",code: "3370",pendOrTrigger: "NA"},
+                    {description: "Records Received - With Invoice To Be Paid.",code: "3343",pendOrTrigger: "NA"},
+                    {description: "ROI - Request Uploaded.",code: "3299",pendOrTrigger: "NA"},
+                    {description: "Records Received.",code: "3293",pendOrTrigger: "NA"},
+                    {description: "AuthP - Rejected Subpoena, assigned.",code: "3167",pendOrTrigger: "NA"},
+                    {description: "AuthP - Rejected Auth, assigned.",code: "3166",pendOrTrigger: "NA"},
+                    {description: "Research - SUTL Unable To Locate Address 3rd Notice.",code: "3084",pendOrTrigger: "NA"},
+                    {description: "Payment - Received.",code: "2971",pendOrTrigger: "NA"},
+                    {description: "Payment - Not Received.",code: "2970",pendOrTrigger: "NA"},
+                    {description: "Invoice - Issued Payment.",code: "2909",pendOrTrigger: "NA"},
+                    {description: "Research - SUTL Unable To Locate Address 1st Notice.",code: "2819",pendOrTrigger: "NA"},
+                    {description: "ROI - Request ID #.",code: "2814",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Close.",code: "2794",pendOrTrigger: "NA"},
+                    {description: "Subpoena Rejected - Certificate of Non-Objection Required.",code: "2764",pendOrTrigger: "NA"},
+                    {description: "Facility - Not Received - 1st Call.",code: "2759",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Escalate to Facility Supervisor.",code: "2742",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Facility Letter - Final Notice SDT-CA.",code: "2741",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - Facility Letter - Final Notice SDT.",code: "2738",pendOrTrigger: "NA"},
+                    {description: "Non-Compliant - 1st Notice.",code: "2734",pendOrTrigger: "NA"},
+                    {description: "Affidavit - Follow Up - Close.",code: "2693",pendOrTrigger: "NA"},
+                    {description: "Affidavit - No Films - Close.",code: "2692",pendOrTrigger: "NA"},
+                    {description: "Facility - Available Shortly With ETA.",code: "2667",pendOrTrigger: "NA"},
+                    {description: "Subpoena Rejected - Wrong Entity - Close.",code: "2636",pendOrTrigger: "NA"},
+                    {description: "Records Sent To Patient - Close.",code: "2635",pendOrTrigger: "NA"},
+                    {description: "Records Sent To Client - Pending Client Response.",code: "2633",pendOrTrigger: "NA"},
+                    {description: "DO NOT USE - Left Message - 3rd Msg - 1st Notice.",code: "2626",pendOrTrigger: "NA"},
+                    {description: "Facility - Correspondence Only.",code: "2609",pendOrTrigger: "NA"},
+                    {description: "Invoice - Prepayment Sent.",code: "2598",pendOrTrigger: "NA"},
+                    {description: "Records Received - X-Ray/CD.",code: "2592",pendOrTrigger: "NA"},
+                    {description: "Records Received - Invoice Paid.",code: "2591",pendOrTrigger: "NA"},
+                    {description: "Records Received - No Affidavit - Follow Up.",code: "2588",pendOrTrigger: "NA"},
+                    {description: "Facility - Voicemail Update.",code: "2584",pendOrTrigger: "NA"},
+                    {description: "Out of Country.",code: "2567",pendOrTrigger: "NA"},
+                    {description: "Confirmation - Resending Request to Facility.",code: "2557",pendOrTrigger: "NA"},
+                    {description: "Authorization - Not Dated.",code: "2545",pendOrTrigger: "NA"},
+                    {description: "Authorization Copy Sent to Facility.",code: "2534",pendOrTrigger: "NA"},
+                    {description: "Received - Research.",code: "1109",pendOrTrigger: "NA"},
+                    {description: "OPP - Client Letter - Records Same As - Close.",code: "510",pendOrTrigger: "NA"},
+                    {description: "Case Settled - Freeze - Close.",code: "251",pendOrTrigger: "NA"},
+                    {description: "Case Cancelled - Close.",code: "214",pendOrTrigger: "NA"},
+                    {description: "Records scanned/images uploaded to server.",code: "-1",pendOrTrigger: "NA"}
+                ]
+            };
+            return statusData[category] || [];
+        }
+        
+        function getTriggerCodesForCategory(category) {
+            const triggerCodes = {
+                "Pend Triggers (Follow-up Scheduling)": [
+                    {description: "Use when you expect a response or action within 10 days and want to revisit the request after that period.", code: "2141", pendOrTrigger: "Pend 10 Days"},
+                    {description: "Use for short-term follow-up, typically when a quick turnaround is expected.", code: "2134", pendOrTrigger: "Pend 2 Days"},
+                    {description: "Use when a facility or team has indicated a response within 3 days.", code: "2135", pendOrTrigger: "Pend 3 Days"},
+                    {description: "Use for long-term follow-up, such as when records are in storage or require extended processing.", code: "2398", pendOrTrigger: "Pend 30 Days"},
+                    {description: "Use when a moderate delay is expected, and you plan to check back in 4 days.", code: "2136", pendOrTrigger: "Pend 4 Days"},
+                    {description: "Use when the facility has requested up to 5 days to respond or complete the request. (Note - Generally we will use Pend 5 days until facility is not saying any specific time.)", code: "2137", pendOrTrigger: "Pend 5 Days"}
+                ],
+                "Sent Triggers (Action Taken)": [
+                    {description: "Use when a paperless record retrieval request has been sent to the facility.", code: "1181", pendOrTrigger: "Sent - Record Retrieval - PAPERLESS"},
+                    {description: "Use when we receive the CNR, then after putting CNR in import folder we will use this trigger.", code: "2416", pendOrTrigger: "Sent - ANR Review"},
+                    {description: "Use when we receive the Invoice and we sent the order for processing.", code: "2402", pendOrTrigger: "Sent Checks"},
+                    {description: "Use when the issue has been escalated or forwarded to the client relations team.", code: "979", pendOrTrigger: "Sent - Client Relations"},
+                    {description: "Use when the request is duplicate.", code: "2417", pendOrTrigger: "Sent - Duplicate Review"},
+                    {description: "Use when the request has been escalated due to delays or non-responsiveness.", code: "2418", pendOrTrigger: "Sent - Escalate Review"},
+                    {description: "Use when the facility is non-compliant and the case is sent for review.", code: "2420", pendOrTrigger: "Sent - Non Compliance Review"},
+                    {description: "Use when the records are stored on another facility then we will create new order.", code: "2419", pendOrTrigger: "Sent - Offsite Review"},
+                    {description: "Use when the request is reserved for California-only processing or compliance.", code: "3597", pendOrTrigger: "Sent - Reserve CA ONLY"},
+                    {description: "Use when the Release of Information request is sent to Datavant/Ciox (specific vendor).", code: "2404", pendOrTrigger: "Sent - ROI 1 - Healthport"},
+                    {description: "Use when the ROI request is sent to MRO, Chartswap, Claimfox, Sharecare, Chartrequest, DMRS.", code: "2439", pendOrTrigger: "Sent - ROI 2 - Other"},
+                    {description: "Use when the ROI request is sent to Clearpath.", code: "3575", pendOrTrigger: "Sent - ROI 3"},
+                    {description: "Use when the request is sent to Solcom (a retrieval or processing system/team).", code: "3388", pendOrTrigger: "Sent Solcom"},
+                    {description: "In case of duplicacy, offsite, follow-up and verbal ANR we will create our status letter and close the order.", code: "2415", pendOrTrigger: "Sent - Status Letter Close Out"},
+                    {description: "Use when the request is escalated or forwarded to a team lead for review.", code: "2401", pendOrTrigger: "Sent - Team Lead"},
+                    {description: "In case of serve new address we need to transfer the case to that area designation.", code: "2403", pendOrTrigger: "Sent - Transfer"},
+                    {description: "When we receive the X-ray records or radiology records.", code: "2400", pendOrTrigger: "Sent - X-Ray/Film Desk"}
+                ],
+                "Solcom Notes": [
+                    {description: "Use to document a quality control note related to the request or records.", code: "2375", pendOrTrigger: "Solcom - QC Note"},
+                    {description: "When facility told us that custodian is not available today or facility is closed for today.", code: "2376", pendOrTrigger: "Solcom - Retrieval Note"},
+                    {description: "NA", code: "2444", pendOrTrigger: "SOLCOM - Update all Departments"},
+                    {description: "NA", code: "2370", pendOrTrigger: "SOLCOM - Billing Note"},
+                    {description: "NA", code: "0", pendOrTrigger: "System Status"},
+                    {description: "NA",code: "3697",pendOrTrigger: "Sent - Checks CLOSE"},
+                    {description: "NA",code: "3597",pendOrTrigger: "Sent - Reserve CA ONLY"},
+                    {description: "NA",code: "3575",pendOrTrigger: "Sent - ROI 3"},
+                    {description: "NA",code: "3388",pendOrTrigger: "Sent - Solcom"},
+                    {description: "NA",code: "2440",pendOrTrigger: "Sent - SUTL"},
+                    {description: "NA",code: "2439",pendOrTrigger: "Sent - ROI 2 - Other"},
+                    {description: "NA",code: "2420",pendOrTrigger: "Sent - Non-Compliance Review"},
+                    {description: "NA",code: "2419",pendOrTrigger: "Sent - Offsite Review"},
+                    {description: "NA",code: "2418",pendOrTrigger: "Sent - Escalate Review"},
+                    {description: "NA",code: "2417",pendOrTrigger: "Sent - Duplicate Review"},
+                    {description: "NA",code: "2416",pendOrTrigger: "Sent - ANR Review"},
+                    {description: "NA",code: "2415",pendOrTrigger: "Sent - Status Letter Close Out"},
+                    {description: "NA",code: "2413",pendOrTrigger: "Sent - Support Team Lead"},
+                    {description: "NA",code: "2404",pendOrTrigger: "Sent - ROI 1 - Healthport"},
+                    {description: "NA",code: "2403",pendOrTrigger: "Sent - Transfer"},
+                    {description: "NA",code: "2402",pendOrTrigger: "Sent - Checks"},
+                    {description: "NA",code: "2401",pendOrTrigger: "Sent - Team Lead"},
+                    {description: "NA",code: "2400",pendOrTrigger: "Sent - Xray/Film Desk"},
+                    {description: "NA",code: "1181",pendOrTrigger: "Sent - Record Retrieval - PAPERLESS"},
+                    {description: "NA",code: "1108",pendOrTrigger: "Sent - OE Research"},
+                    {description: "NA",code: "1105",pendOrTrigger: "Sent - Production"},
+                    {description: "NA",code: "1103",pendOrTrigger: "Sent - Billing"},
+                    {description: "NA",code: "979",pendOrTrigger: "Sent - Client Relations"}
+                ]
+            };
+            return triggerCodes[category] || [];
+        }
+        
+        // ============================================
+        // STATUS CODES EXPLORER - CORE FUNCTIONS
+        // ============================================
+        
+        function initializeStatusSearch() {
+            allStatusCodesFlat = [];
+            const categories = [
+                "Affidavit-Related", "Authorization-Related", "Call-Related", "Order-Related",
+                "Facility Status & Communication", "Fax-Related", "Film-Related",
+                "Follow-Up & Messaging", "Invoice & Billing", "New Order",
+                "Non-Compliance", "Records & Request", "Service of Process (Serve)",
+                "Subpoena Rejection & Objection", "VPU/VTC"
+            ];
+            
+            categories.forEach(category => {
+                const statuses = getStatusCodesForCategory(category);
+                statuses.forEach(status => {
+                    allStatusCodesFlat.push({
+                        ...status,
+                        category: category
+                    });
+                });
+            });
+        }
+        
+        function searchStatusCodesByKeyword(keyword) {
+            if (!keyword || keyword.trim() === '') return [];
+            
+            const searchTerm = keyword.toLowerCase().trim();
+            const results = [];
+            
+            allStatusCodesFlat.forEach(status => {
+                const description = status.description.toLowerCase();
+                const code = status.code.toString();
+                const pendOrTrigger = status.pendOrTrigger.toLowerCase();
+                
+                if (description.includes(searchTerm) || 
+                    code.includes(searchTerm) || 
+                    pendOrTrigger.includes(searchTerm)) {
+                    results.push(status);
+                }
+            });
+            
+            return results;
+        }
+        
+        function getStatusSuggestions() {
+            const suggestionWords = new Set();
+            const commonWords = ['use', 'when', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'for', 'in', 'on', 'at', 'by', 'with', 'without', 'is', 'are', 'was', 'were', 'be', 'been', 'that', 'this', 'these', 'those'];
+            
+            allStatusCodesFlat.forEach(status => {
+                const words = status.description.toLowerCase().split(/\s+/);
+                words.forEach(word => {
+                    const cleanWord = word.replace(/[^\w]/g, '');
+                    if (cleanWord.length >= 3 && !commonWords.includes(cleanWord)) {
+                        suggestionWords.add(cleanWord);
+                    }
+                });
+            });
+            
+            return Array.from(suggestionWords).sort().slice(0, 20);
+        }
+        
+        function highlightKeyword(text, keyword) {
+            if (!keyword || keyword.trim() === '') return escapeHtml(text);
+            
+            const searchTerm = keyword.toLowerCase().trim();
+            const escapedText = escapeHtml(text);
+            const escapedKeyword = escapeHtml(searchTerm);
+            
+            const regex = new RegExp(`(${escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            
+            return escapedText.replace(regex, `<mark>$1</mark>`);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // ============================================
+        // STATUS CODES EXPLORER - UI FUNCTIONS
+        // ============================================
+        
+        function startStatusCodesExplorer() {
+            if (statusExplorerDisplayed) return;
+            statusExplorerDisplayed = true;
+            
+            initializeStatusSearch();
+            
+            const categories = [
+                "Affidavit-Related", "Authorization-Related", "Call-Related", "Order-Related",
+                "Facility Status & Communication", "Fax-Related", "Film-Related",
+                "Follow-Up & Messaging", "Invoice & Billing", "New Order",
+                "Non-Compliance", "Records & Request", "Service of Process (Serve)",
+                "Subpoena Rejection & Objection", "VPU/VTC"
+            ];
+            
+            let html = `<div class="section-title"><i class="fas fa-folder-open"></i> 📋 Status Codes</div>
+                        <button id="searchStatusBtn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 16px;">
+                            <i class="fas fa-search"></i> Search All Status Codes
+                        </button>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">`;
+            
+            categories.forEach(cat => {
+                const items = getStatusCodesForCategory(cat);
+                if (items.length > 0) {
+                    html += `<div class="category-card" data-category="${escapeHtml(cat)}" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <i class="fas fa-folder-open" style="color: #667eea; font-size: 20px;"></i>
+                                    <div style="font-weight: 500; color: #2d3748;">${escapeHtml(cat)}</div>
+                                </div>
+                                <div style="font-size: 12px; color: #718096;">${items.length} status codes</div>
+                            </div>`;
+                }
+            });
+            
+            html += `</div>`;
+            addFormattedMessage(html);
+            
+            // Attach event listeners after DOM update
+            setTimeout(function() {
+                // Category card click handlers
+                document.querySelectorAll('.category-card').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        var category = this.getAttribute('data-category');
+                        renderStatusDescriptionsForCategory(category);
+                        statusExplorerDisplayed = false;
+                    });
+                    
+                    el.addEventListener('mouseenter', function() {
+                        this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                        this.style.borderColor = '#667eea';
+                    });
+                    el.addEventListener('mouseleave', function() {
+                        this.style.boxShadow = 'none';
+                        this.style.borderColor = '#e2e8f0';
+                    });
+                });
+                
+                // Search button click handler - use document.getElementById directly
+                var searchBtn = document.getElementById('searchStatusBtn');
+                if (searchBtn) {
+                    // Remove any existing listeners by replacing with a clone
+                    var newSearchBtn = searchBtn.cloneNode(true);
+                    searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
+                    
+                    newSearchBtn.addEventListener('click', function() {
+                        showStatusSearch();
+                        statusExplorerDisplayed = false;
+                    });
+                }
+            }, 100);
+            
+            statusExplorerDisplayed = false;
+        }
+
+        function showStatusSearch() {
+            if (statusSearchDisplayed) return;
+            statusSearchDisplayed = true;
+            
+            var suggestions = getStatusSuggestions();
+            
+            var html = `<div class="back-link" onclick="startStatusCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Status Codes</div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <input type="text" id="statusSearchInput" placeholder="Enter keyword (e.g., affidavit, authorization, subpoena, delay...)" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                                <button id="statusSearchBtn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">`;
+            
+            suggestions.forEach(function(word) {
+                html += `<span class="status-suggestion-chip" data-keyword="${escapeHtml(word)}" style="background: #f0f0f0; padding: 4px 10px; border-radius: 16px; cursor: pointer; font-size: 12px; transition: all 0.2s;">${escapeHtml(word)}</span>`;
+            });
+            
+            html += `</div></div>`;
+            addFormattedMessage(html);
+            
+            // Attach event listeners after DOM update
+            setTimeout(function() {
+                var searchBtn = document.getElementById('statusSearchBtn');
+                var searchInput = document.getElementById('statusSearchInput');
+                
+                function performSearch() {
+                    var keyword = searchInput.value.trim();
+                    if (keyword) {
+                        var results = searchStatusCodesByKeyword(keyword);
+                        renderStatusSearchResults(results, keyword);
+                        statusSearchDisplayed = false;
+                    } else {
+                        showToast('Please enter a search keyword', 'warning');
+                    }
+                }
+                
+                if (searchBtn) {
+                    // Remove any existing listeners
+                    var newSearchBtn = searchBtn.cloneNode(true);
+                    searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
+                    newSearchBtn.addEventListener('click', performSearch);
+                }
+                
+                if (searchInput) {
+                    searchInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            performSearch();
+                        }
+                    });
+                }
+                
+                // Suggestion chip handlers
+                document.querySelectorAll('.status-suggestion-chip').forEach(function(chip) {
+                    chip.addEventListener('click', function() {
+                        var keyword = this.getAttribute('data-keyword');
+                        var input = document.getElementById('statusSearchInput');
+                        if (input) {
+                            input.value = keyword;
+                            performSearch();
+                        }
+                    });
+                    
+                    chip.addEventListener('mouseenter', function() {
+                        this.style.background = '#667eea';
+                        this.style.color = 'white';
+                    });
+                    chip.addEventListener('mouseleave', function() {
+                        this.style.background = '#f0f0f0';
+                        this.style.color = 'inherit';
+                    });
+                });
+            }, 100);
+        }
+
+        function renderStatusSearchResults(results, searchKeyword) {
+            if (results.length === 0) {
+                var html = `<div class="back-link" onclick="startStatusCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                            <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Results for "${escapeHtml(searchKeyword)}"</div>
+                            <div class="no-results">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <p>No status codes found matching "${escapeHtml(searchKeyword)}"</p>
+                            </div>`;
+                addFormattedMessage(html);
+                return;
+            }
+            
+            var groupedResults = {};
+            results.forEach(function(result) {
+                if (!groupedResults[result.category]) {
+                    groupedResults[result.category] = [];
+                }
+                groupedResults[result.category].push(result);
+            });
+            
+            var html = `<div class="back-link" onclick="startStatusCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Results for "${escapeHtml(searchKeyword)}"</div>
+                        <div style="background: #e6f7ff; padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+                            <i class="fas fa-info-circle"></i> Found ${results.length} status code(s)
+                        </div>`;
+            
+            for (var category in groupedResults) {
+                var categoryResults = groupedResults[category];
+                html += `<div style="margin-bottom: 20px;">
+                            <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 14px; font-weight: 500;">
+                                <i class="fas fa-folder-open"></i> ${escapeHtml(category)}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">`;
+                
+                categoryResults.forEach(function(result) {
+                    var highlightedDesc = highlightKeyword(result.description, searchKeyword);
+                    
+                    var badgeHtml = '';
+                    if (result.pendOrTrigger.includes('Trigger') || result.pendOrTrigger.includes('Sent')) {
+                        badgeHtml = `<span style="background: #f093fb; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Trigger</span>`;
+                    } else if (result.pendOrTrigger.includes('Pend')) {
+                        badgeHtml = `<span style="background: #48bb78; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Pend</span>`;
+                    }
+                    
+                    html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
+                                    <i class="fas fa-code" style="color: #667eea; font-size: 14px;"></i>
+                                    <strong style="color: #2d3748;">${escapeHtml(result.code)}</strong>
+                                    ${badgeHtml}
+                                </div>
+                                <div style="font-size: 13px; color: #4a5568; line-height: 1.4;">${highlightedDesc}</div>
+                                <div style="font-size: 11px; color: #718096; margin-top: 6px;">
+                                    <i class="fas fa-tag"></i> ${escapeHtml(result.pendOrTrigger)}
+                                </div>
+                            </div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            addFormattedMessage(html);
+        }
+
+        function renderStatusDescriptionsForCategory(category) {
+            var items = getStatusCodesForCategory(category);
+            
+            if (items.length === 0) {
+                addFormattedMessage('<div style="padding: 10px; color: #666;">No status codes found for "' + category + '".</div>');
+                return;
+            }
+            
+            var html = `<div class="back-link" onclick="startStatusCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-list-ul"></i> ${escapeHtml(category)}</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">`;
+            
+            items.forEach(function(item) {
+                var badgeHtml = '';
+                if (item.pendOrTrigger.includes('Trigger') || item.pendOrTrigger.includes('Sent')) {
+                    badgeHtml = `<span style="background: #f093fb; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Trigger</span>`;
+                } else if (item.pendOrTrigger.includes('Pend')) {
+                    badgeHtml = `<span style="background: #48bb78; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Pend</span>`;
+                }
+                
+                html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
+                                <i class="fas fa-code" style="color: #667eea; font-size: 14px;"></i>
+                                <strong style="color: #2d3748;">${escapeHtml(item.code)}</strong>
+                                ${badgeHtml}
+                            </div>
+                            <div style="font-size: 13px; color: #4a5568; line-height: 1.4; margin-bottom: 6px;">${escapeHtml(item.description)}</div>
+                            <div style="font-size: 11px; color: #718096;">
+                                <i class="fas fa-tag"></i> ${escapeHtml(item.pendOrTrigger)}
+                            </div>
+                        </div>`;
+            });
+            
+            html += `</div>`;
+            addFormattedMessage(html);
+        }
+
+        
+        // ============================================
+        // TRIGGER CODES EXPLORER - CORE FUNCTIONS
+        // ============================================
+        
+        function initializeTriggerSearch() {
+            allTriggersFlat = [];
+            const categories = ["Pend Triggers (Follow-up Scheduling)", "Sent Triggers (Action Taken)", "Solcom Notes"];
+            
+            categories.forEach(category => {
+                const triggers = getTriggerCodesForCategory(category);
+                triggers.forEach(trigger => {
+                    if (trigger.description !== "NA") {
+                        allTriggersFlat.push({
+                            ...trigger,
+                            category: category
+                        });
+                    }
+                });
+            });
+        }
+        
+        function searchTriggersByKeyword(keyword) {
+            if (!keyword || keyword.trim() === '') return [];
+            
+            const searchTerm = keyword.toLowerCase().trim();
+            const results = [];
+            
+            allTriggersFlat.forEach(trigger => {
+                const description = trigger.description.toLowerCase();
+                const pendOrTrigger = trigger.pendOrTrigger.toLowerCase();
+                const code = trigger.code;
+                
+                if (description.includes(searchTerm) || 
+                    pendOrTrigger.includes(searchTerm) || 
+                    code.includes(searchTerm)) {
+                    results.push(trigger);
+                }
+            });
+            
+            return results;
+        }
+        
+        function getTriggerSuggestions() {
+            const suggestionWords = new Set();
+            const commonWords = ['use', 'when', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'for', 'in', 'on', 'at', 'by', 'with', 'without', 'is', 'are', 'was', 'were', 'be', 'been'];
+            
+            allTriggersFlat.forEach(trigger => {
+                const words = trigger.description.toLowerCase().split(/\s+/);
+                words.forEach(word => {
+                    const cleanWord = word.replace(/[^\w]/g, '');
+                    if (cleanWord.length >= 3 && !commonWords.includes(cleanWord)) {
+                        suggestionWords.add(cleanWord);
+                    }
+                });
+            });
+            
+            return Array.from(suggestionWords).sort().slice(0, 15);
+        }
+        
+        // ============================================
+        // TRIGGER CODES EXPLORER - UI FUNCTIONS
+        // ============================================
+        
+        function startTriggerCodesExplorer() {
+            if (explorerDisplayed) return;
+            explorerDisplayed = true;
+            
+            initializeTriggerSearch();
+            
+            var triggerCategories = {
+                "Pend Triggers (Follow-up Scheduling)": getTriggerCodesForCategory("Pend Triggers (Follow-up Scheduling)").filter(function(t) { return t.description !== "NA"; }),
+                "Sent Triggers (Action Taken)": getTriggerCodesForCategory("Sent Triggers (Action Taken)").filter(function(t) { return t.description !== "NA"; }),
+                "Solcom Notes": getTriggerCodesForCategory("Solcom Notes").filter(function(t) { return t.description !== "NA" && t.description !== "Use to document a quality control note related to the request or records."; })
+            };
+            
+            var html = `<div class="section-title"><i class="fas fa-code-branch"></i> 📡 Trigger Codes</div>
+                        <button id="searchTriggersBtn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 16px;">
+                            <i class="fas fa-search"></i> Search All Triggers
+                        </button>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">`;
+            
+            for (var cat in triggerCategories) {
+                var items = triggerCategories[cat];
+                if (items.length > 0) {
+                    html += `<div class="category-card" data-category="${escapeHtml(cat)}" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <i class="fas fa-folder-open" style="color: #667eea; font-size: 20px;"></i>
+                                    <div style="font-weight: 500; color: #2d3748;">${escapeHtml(cat)}</div>
+                                </div>
+                                <div style="font-size: 12px; color: #718096;">${items.length} triggers</div>
+                            </div>`;
+                }
+            }
+            
+            html += `</div>`;
+            addFormattedMessage(html);
+            
+            setTimeout(function() {
+                document.querySelectorAll('.category-card').forEach(function(el) {
+                    el.addEventListener('click', function() {
+                        var category = this.getAttribute('data-category');
+                        renderTriggerDescriptionsForCategory(category);
+                        explorerDisplayed = false;
+                    });
+                    
+                    el.addEventListener('mouseenter', function() {
+                        this.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                        this.style.borderColor = '#667eea';
+                    });
+                    el.addEventListener('mouseleave', function() {
+                        this.style.boxShadow = 'none';
+                        this.style.borderColor = '#e2e8f0';
+                    });
+                });
+                
+                var searchBtn = document.getElementById('searchTriggersBtn');
+                if (searchBtn) {
+                    var newSearchBtn = searchBtn.cloneNode(true);
+                    searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
+                    
+                    newSearchBtn.addEventListener('click', function() {
+                        showTriggerSearch();
+                        explorerDisplayed = false;
+                    });
+                }
+            }, 100);
+            
+            explorerDisplayed = false;
+        }
+
+        function showTriggerSearch() {
+            if (searchDisplayed) return;
+            searchDisplayed = true;
+            
+            var suggestions = getTriggerSuggestions();
+            
+            var html = `<div class="back-link" onclick="startTriggerCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Trigger Codes</div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                                <input type="text" id="triggerSearchInput" placeholder="Enter keyword (e.g., revisit, request, facility, records...)" style="flex: 1; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                                <button id="triggerSearchBtn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">`;
+            
+            suggestions.forEach(function(word) {
+                html += `<span class="suggestion-chip" data-keyword="${escapeHtml(word)}" style="background: #f0f0f0; padding: 4px 10px; border-radius: 16px; cursor: pointer; font-size: 12px; transition: all 0.2s;">${escapeHtml(word)}</span>`;
+            });
+            
+            html += `</div></div>`;
+            addFormattedMessage(html);
+            
+            setTimeout(function() {
+                var searchBtn = document.getElementById('triggerSearchBtn');
+                var searchInput = document.getElementById('triggerSearchInput');
+                
+                function performSearch() {
+                    var keyword = searchInput.value.trim();
+                    if (keyword) {
+                        var results = searchTriggersByKeyword(keyword);
+                        renderTriggerSearchResults(results, keyword);
+                        searchDisplayed = false;
+                    } else {
+                        showToast('Please enter a search keyword', 'warning');
+                    }
+                }
+                
+                if (searchBtn) {
+                    var newSearchBtn = searchBtn.cloneNode(true);
+                    searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
+                    newSearchBtn.addEventListener('click', performSearch);
+                }
+                
+                if (searchInput) {
+                    searchInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            performSearch();
+                        }
+                    });
+                }
+                
+                document.querySelectorAll('.suggestion-chip').forEach(function(chip) {
+                    chip.addEventListener('click', function() {
+                        var keyword = this.getAttribute('data-keyword');
+                        var input = document.getElementById('triggerSearchInput');
+                        if (input) {
+                            input.value = keyword;
+                            performSearch();
+                        }
+                    });
+                    
+                    chip.addEventListener('mouseenter', function() {
+                        this.style.background = '#667eea';
+                        this.style.color = 'white';
+                    });
+                    chip.addEventListener('mouseleave', function() {
+                        this.style.background = '#f0f0f0';
+                        this.style.color = 'inherit';
+                    });
+                });
+            }, 100);
+        }
+
+        function renderTriggerSearchResults(results, searchKeyword) {
+            if (results.length === 0) {
+                var html = `<div class="back-link" onclick="startTriggerCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                            <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Results for "${escapeHtml(searchKeyword)}"</div>
+                            <div class="no-results">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <p>No trigger codes found matching "${escapeHtml(searchKeyword)}"</p>
+                            </div>`;
+                addFormattedMessage(html);
+                return;
+            }
+            
+            var groupedResults = {};
+            results.forEach(function(result) {
+                if (!groupedResults[result.category]) {
+                    groupedResults[result.category] = [];
+                }
+                groupedResults[result.category].push(result);
+            });
+            
+            var html = `<div class="back-link" onclick="startTriggerCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-search"></i> 🔍 Search Results for "${escapeHtml(searchKeyword)}"</div>
+                        <div style="background: #e6f7ff; padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+                            <i class="fas fa-info-circle"></i> Found ${results.length} trigger(s)
+                        </div>`;
+            
+            for (var category in groupedResults) {
+                var categoryResults = groupedResults[category];
+                html += `<div style="margin-bottom: 20px;">
+                            <div style="background: #667eea; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 14px; font-weight: 500;">
+                                <i class="fas fa-folder-open"></i> ${escapeHtml(category)}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">`;
+                
+                categoryResults.forEach(function(result) {
+                    var highlightedDesc = highlightKeyword(result.description, searchKeyword);
+                    var highlightedName = highlightKeyword(result.pendOrTrigger, searchKeyword);
+                    
+                    html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                    <i class="fas fa-code" style="color: #667eea; font-size: 14px;"></i>
+                                    <strong style="color: #2d3748;">${escapeHtml(result.code)} - ${highlightedName}</strong>
+                                </div>
+                                <div style="font-size: 13px; color: #4a5568; line-height: 1.4;">${highlightedDesc}</div>
+                            </div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            addFormattedMessage(html);
+        }
+
+        function renderTriggerDescriptionsForCategory(category) {
+            var items = getTriggerCodesForCategory(category).filter(function(t) { return t.description !== "NA"; });
+            
+            if (items.length === 0) {
+                addFormattedMessage('<div style="padding: 10px; color: #666;">No trigger codes found for "' + category + '".</div>');
+                return;
+            }
+            
+            var html = `<div class="back-link" onclick="startTriggerCodesExplorer()"><i class="fas fa-arrow-left"></i> Back to Categories</div>
+                        <div class="section-title"><i class="fas fa-code-branch"></i> ${escapeHtml(category)}</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">`;
+            
+            items.forEach(function(item) {
+                html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <i class="fas fa-code" style="color: #667eea; font-size: 14px;"></i>
+                                <strong style="color: #2d3748;">${escapeHtml(item.code)} - ${escapeHtml(item.pendOrTrigger)}</strong>
+                            </div>
+                            <div style="font-size: 13px; color: #4a5568; line-height: 1.4;">${escapeHtml(item.description)}</div>
+                        </div>`;
+            });
+            
+            html += `</div>`;
+            addFormattedMessage(html);
+        }
+        
+        // ============================================
+        // QUICK ACTION FUNCTIONS (Compact versions)
+        // ============================================
+        
+        function showCallAssistantOpening() {
+            setContext('Call Assistant - Opening Prompt');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#2e7d32;margin-bottom:6px;">🟢 Call Assistant - Opening Prompt</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Step 1: Opening Prompt</div>
+                <div style="background:#f0f4ff;padding:6px 12px;border-radius:6px;border-left:3px solid #6C63FF;margin:2px 0 6px 0;font-size:13px;">
+                    <em>"Hello, this is [Name] from ABI Document Support Services regarding a records request for [Medical, Billing, X-ray, etc.]. Are you the right point of contact?"</em>
+                </div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Possible Responses:</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "Yes, I'm the contact."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "Great, thank you. Could you confirm if you received our request for WO #[number]?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "I'm not sure."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "No problem — may I confirm the fax/email/address you receive record requests at?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "Yes, we received it (Processing)." OR "Forwarded to ROI"<br><span style="font-weight:600;color:#059669;">✅ Next:</span> "Is the request valid and complete? If with ROI, ask for request ID or invoice number."</div>
+                <div style="background:#fffbeb;padding:4px 10px;border-radius:4px;border-left:3px solid #f59e0b;margin:4px 0;font-size:12px;">
+                    📌 <strong>Note:</strong> If with ROI or In-house Copy Service – contact them directly.
+                </div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Live Call Assistant - Opening</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCallAssistantHandling() {
+            setContext('Call Assistant - Handling Responses');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#d97706;margin-bottom:6px;">🟡 Handling Custodian Responses</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "It's in process."<br><span style="font-weight:600;color:#059669;">✅ Push politely:</span> "Understood — what is the estimated completion date?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "We're behind."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "What is the earliest realistic release date?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "We don't have it."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "Can I resend the request while I have you on the line?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "Fees are required."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "What is the amount, and who should the check be made payable to?"</div>
+                <div style="margin:2px 0;"><span style="font-weight:600;color:#2563eb;">Custodian:</span> "It's completed."<br><span style="font-weight:600;color:#059669;">✅ Reply:</span> "Could you confirm how and when it will be sent?"</div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Live Call Assistant - Handling</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCallAssistantClose() {
+            setContext('Call Assistant - Close Script');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#2e7d32;margin-bottom:6px;">🟢 Call Close Script</div>
+                <div style="background:#f0f4ff;padding:6px 12px;border-radius:6px;border-left:3px solid #6C63FF;margin:2px 0 6px 0;font-size:13px;">
+                    <em>"Thank you for your assistance. We will follow up in the next 5 days if we do not receive the records."</em>
+                </div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Key Reminders:</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;">
+                    <li>Always confirm a date before ending the call</li>
+                    <li>Document all details in status notes</li>
+                    <li>Set follow-up reminder in your calendar</li>
+                </ul>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Pro Tips:</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;">
+                    <li>Never hang up without a confirmed next step</li>
+                    <li>Always get a specific follow-up date</li>
+                    <li>Document custodian's name and direct contact info</li>
+                </ul>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Live Call Assistant - Close</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showKeyResponsibilities() {
+            setContext('Key Responsibilities');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">📋 Key Responsibilities</div>
+                <ol style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Making regular phone calls to custodians after service of the request</li>
+                    <li>Intensifying communication as the order approaches the due date</li>
+                    <li>Documenting all communications in the computer system</li>
+                    <li>Pushing for records to be sent to ABI via email, fax, mail, or Box Portal</li>
+                    <li>Coordinating field trips for California locations to scan records</li>
+                    <li>Closing orders, creating new orders when necessary</li>
+                    <li>Maintaining integrity and organization of routes</li>
+                </ol>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Key Responsibilities</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showRequestPhases() {
+            setContext('Request Phases');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">📊 Phases of a Request</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#2563eb;">PHASE 1: Confirm Receipt</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">Confirm facility receipt, resend if needed, learn facility processing times</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#d97706;">PHASE 2: Processing</div>
+                <div style="background:#fffbeb;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">Hold facility accountable to ETA or Due Date, send notices if needed</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#059669;">PHASE 3: Invoices</div>
+                <div style="background:#ecfdf5;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">Follow up for invoice, have facility email or fax, refer to Invoice section</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#dc2626;">PHASE 4: Securing Records</div>
+                <div style="background:#fef2f2;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;"><strong>Critical:</strong> DO NOT tell client records are received - allow time for internal processing</div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Request Phases</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showFeeProcessing() {
+            setContext('Fee Processing');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">💰 Fee and Invoice Processing</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    <strong>Processing Fee:</strong> Average $15<br>
+                    <strong>Special Fees:</strong> Some facilities charge $10-$50<br>
+                    <strong>Action:</strong> Always request invoice
+                </div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Client Approval Rules:</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li><strong>$1 - $249:</strong> May pay fees</li>
+                    <li><strong>$250+:</strong> Needs client approval</li>
+                </ul>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#2563eb;">Paying by Check:</div>
+                <ol style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Upload invoice with label "_rrchk"</li>
+                    <li>Status: "INVOICE-RECEIVED"</li>
+                    <li>Trigger: "SENT-CHECKS"</li>
+                </ol>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#059669;">Paying by Credit Card:</div>
+                <ol style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Upload invoice with label "_rrchk"</li>
+                    <li>Email to <strong>Supportids@abidss.com</strong></li>
+                    <li>Add Solcom note: "Emailed SupportIDS"</li>
+                </ol>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Fees</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showHIPAA() {
+            setContext('HIPAA Law');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">🛡️ HIPAA Law</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    <strong>Full Form:</strong> Health Insurance Portability & Accountability Act<br>
+                    <strong>Purpose:</strong> Establishes standards to protect medical records and PHI
+                </div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Key Requirements:</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Protect all PHI at all times</li>
+                    <li>Valid authorization required</li>
+                    <li>Apply minimum necessary standard</li>
+                    <li>BAAs required for third-party processors</li>
+                </ul>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#dc2626;">Penalties:</div>
+                <div style="padding:2px 10px;margin:2px 0 4px 0;font-size:13px;">$100 - $50,000+ per violation</div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Best Practices:</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Verify identity</li>
+                    <li>Use encrypted communication</li>
+                    <li>Document all PHI access</li>
+                    <li>Report breaches immediately</li>
+                </ul>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: HIPAA Law</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showANRProcessing() {
+            setContext('ANR Processing');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">📄 ANR Processing Steps</div>
+                <ol style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Save and upload ANR to "Import" using label "_abicnr"</li>
+                    <li>Status the order accordingly</li>
+                    <li>Trigger: "Sent- ANR review"</li>
+                    <li>Double-check affidavit uploaded to Solcom</li>
+                </ol>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:4px 0;font-size:13px;"><strong>Client Review:</strong> 10 days to challenge a CNR</div>
+                <div style="background:#fffbeb;padding:4px 10px;border-radius:4px;margin:4px 0;font-size:13px;"><strong>Auto Closeout:</strong> ANR for films, DOS, lost, destroyed, purged</div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: ANR Processing</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showDocumentRetrieval() {
+            setContext('Document Retrieval');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">🔍 Document Retrieval Procedures</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;background:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px;margin:2px 0 4px 0;">
+                    <div>• Time Management</div>
+                    <div>• Scheduling Field Trips</div>
+                    <div>• Assignment Not Complete</div>
+                    <div>• ROI Processing</div>
+                    <div>• Follow Up Orders</div>
+                    <div>• Status Letters</div>
+                    <div>• ANR Processing</div>
+                    <div>• Verbal ANR Process</div>
+                    <div>• Duplicate Orders</div>
+                    <div>• Offsites</div>
+                    <div>• Transfers</div>
+                    <div>• Fees & Payments</div>
+                    <div>• X-Ray Breakdown</div>
+                    <div>• Locates & SUTL</div>
+                    <div>• Notices of Non-Compliance</div>
+                    <div>• Lengthy Delay</div>
+                    <div>• Authorization Rejections</div>
+                </div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Document Retrieval Procedures</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showRequestTypes() {
+            setContext('Request Types');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#1a1a2e;margin-bottom:6px;">📋 Types of Legal Requests</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">1. Signed Authorization</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Patient-signed request, valid for 12 months</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">2. Deposition Subpoena</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Legal order for records, 15 days to comply</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">3. Workers Comp Subpoena</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Work-related injury, 10 days to comply</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">4. Photocopy Special / WCAB</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Pre-arranged copy jobs, no subpoena</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">5. Serve Only / Personal Appearance</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Legal documents needing service only</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">6. Request for Production</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Documents and ESI, 30 days to comply</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">7. E-Discovery</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Electronic data and ESI, 30-45 days</div>
+                <div style="font-weight:600;margin:6px 0 2px 0;color:#1a1a2e;font-size:13px;">Priority Levels:</div>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 4px 0;">
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:3px 6px;border:1px solid #e2e8f0;text-align:left;">Type</th>
+                        <th style="padding:3px 6px;border:1px solid #e2e8f0;text-align:left;">Priority</th>
+                        <th style="padding:3px 6px;border:1px solid #e2e8f0;text-align:left;">Response Time</th>
+                    </tr>
+                    <tr><td style="padding:3px 6px;border:1px solid #e2e8f0;">Medical Emergency</td><td style="padding:3px 6px;border:1px solid #e2e8f0;"><span class="status-badge status-warning">HIGHEST</span></td><td style="padding:3px 6px;border:1px solid #e2e8f0;">Same day</td></tr>
+                    <tr><td style="padding:3px 6px;border:1px solid #e2e8f0;">Workers Comp</td><td style="padding:3px 6px;border:1px solid #e2e8f0;"><span class="status-badge status-warning">HIGH</span></td><td style="padding:3px 6px;border:1px solid #e2e8f0;">10 days</td></tr>
+                    <tr><td style="padding:3px 6px;border:1px solid #e2e8f0;">Deposition Subpoena</td><td style="padding:3px 6px;border:1px solid #e2e8f0;"><span class="status-badge status-warning">HIGH</span></td><td style="padding:3px 6px;border:1px solid #e2e8f0;">15 days</td></tr>
+                    <tr><td style="padding:3px 6px;border:1px solid #e2e8f0;">Signed Authorization</td><td style="padding:3px 6px;border:1px solid #e2e8f0;"><span class="status-badge status-info">NORMAL</span></td><td style="padding:3px 6px;border:1px solid #e2e8f0;">30 days</td></tr>
+                </table>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Types of Requests Guide</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showNonCompliance() {
+            setContext('Non-Compliance');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#dc2626;margin-bottom:6px;">⚠️ Notices of Non-Compliance</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#1a1a2e;">First Notice:</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Considered served - no separate action needed</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#d97706;">Second Notice:</div>
+                <div style="background:#fffbeb;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    1. Status: "non-compliant-2nd Notice"<br>
+                    2. Generate: Status Entry → PRINT → "FACILITY-1 -FACILITY LETTER"<br>
+                    3. Save as PDF with reference and "2nd"<br>
+                    4. Send to facility with request copy
+                </div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#dc2626;">Final Notice:</div>
+                <div style="background:#fef2f2;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    1. "Final Notice SDT" (out of state) or "Final Notice SDT-CA" (CA)<br>
+                    2. Generate using same process as Second Notice<br>
+                    3. Save as PDF with reference and "Final"<br>
+                    4. Send to facility with request copy
+                </div>
+                <div style="font-weight:600;margin:4px 0 2px 0;color:#1a1a2e;">Timeline:</div>
+                <div style="background:#f8fafc;padding:4px 10px;border-radius:4px;font-size:13px;">
+                    Week 1-3: Follow up → Week 3: Second Notice → Week 4-5: Follow up → Week 6: Final Notice → Week 7: Inform facility → Week 8: Send to Client Relations
+                </div>
+                <div style="font-size:11px;color:#6B7280;margin-top:4px;">Source: Non-Compliance</div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        // ============================================
+        // CUSTODIAN RESPONSE FUNCTIONS
+        // ============================================
+        
+        function showCustodianNotReceived() {
+            setContext('Custodian - Not Received');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#6C63FF;margin-bottom:6px;">📋 Location Not Received The Request</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Ask for custodian's preferred mode to receive the request</li>
+                    <li>Confirm expected turnaround time (TAT)</li>
+                    <li>Confirm if prepayment is required</li>
+                    <li>Ask about preferred method of sending documents</li>
+                </ul>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCustodianPending() {
+            setContext('Custodian - Pending');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#d97706;margin-bottom:6px;">⏳ Pending - Records will be sent</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Confirm the order number</li>
+                    <li>Ask how, when, where, what, and who will send the records</li>
+                    <li>Add the relevant code and proceed to the next order</li>
+                </ul>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCustodianInvoicing() {
+            setContext('Custodian - Invoicing');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#059669;margin-bottom:6px;">💰 Invoicing - Invoice will be sent first</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Confirm the order number</li>
+                    <li>Ask how, when, where, and who will send the invoice</li>
+                    <li>Add the relevant code and proceed to the next order</li>
+                </ul>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCustodianRejected() {
+            setContext('Custodian - Rejected/Clarification');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#dc2626;margin-bottom:6px;">⚠️ Rejected / Clarification Required</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">Scenario 1: Identify Requirement</div>
+                <div style="padding:1px 8px;margin:1px 0 3px 0;font-size:13px;">Ask custodian to specify what document/information is missing</div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">Scenario 2: Patient-Specific Info</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    Check if details available from another order for same patient.<br>
+                    If available → provide to custodian.<br>
+                    If not → escalate to CR team.<br>
+                    <strong>Always review status history before escalating.</strong>
+                </div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">Scenario 3: Location-Specific Details</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    Check if another order from same facility exists.<br>
+                    If yes → provide details from that order.<br>
+                    If no → escalate to CR team.<br>
+                    <strong>Always review status history before escalating.</strong>
+                </div>
+                <div style="font-weight:600;margin:3px 0 1px 0;color:#2563eb;font-size:13px;">Scenario 4: Document Verification</div>
+                <div style="background:#f0f4ff;padding:4px 10px;border-radius:4px;margin:2px 0 4px 0;font-size:13px;">
+                    Check Attachments in Edit Work Order.<br>
+                    Verify if document already provided.<br>
+                    <strong>Do not escalate unless verified not attached.</strong>
+                </div>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCustodianDispatched() {
+            setContext('Custodian - Dispatched');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#2563eb;margin-bottom:6px;">📦 Dispatched - Records already sent</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Confirm order number to avoid duplication</li>
+                    <li>Ask what was sent, when, how, and where</li>
+                    <li>Request them to resend</li>
+                    <li>Email internal team to search for records</li>
+                </ul>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        function showCustodianDelayed() {
+            setContext('Custodian - Delayed/Unresponsive');
+            const content = `
+                <div style="font-weight:700;font-size:15px;color:#d97706;margin-bottom:6px;">⏰ Delayed / Unresponsive</div>
+                <ul style="margin:2px 0 4px 0;padding-left:18px;font-size:13px;">
+                    <li>Add notes</li>
+                    <li>Follow escalation process as needed</li>
+                    <li>Follow delay-location procedures appropriately</li>
+                </ul>
+            `;
+            addFormattedMessage(content);
+        }
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('chatInput').focus();
+            loadDocuments();
+            initializeStatusSearch();
+            initializeTriggerSearch();
+            
+            // Status Codes button handler
+            const statusBtn = document.getElementById('statusCodesMainBtn');
+            if (statusBtn) {
+                statusBtn.addEventListener('click', function() {
+                    statusExplorerDisplayed = false;
+                    statusSearchDisplayed = false;
+                    startStatusCodesExplorer();
+                });
+            }
+            
+            // Trigger Codes button handler
+            const triggerBtn = document.getElementById('triggerCodesMainBtn');
+            if (triggerBtn) {
+                triggerBtn.addEventListener('click', function() {
+                    explorerDisplayed = false;
+                    searchDisplayed = false;
+                    startTriggerCodesExplorer();
+                });
+            }
+        });
+    </script>
+
+    <!-- Facility Details Modal -->
+    <div class="facility-modal" id="facilityModal" onclick="if(event.target === this) closeFacilityModal()">
+        <div class="facility-modal-content">
+            <div class="facility-modal-header">
+                <h3 id="facilityModalTitle">Facility Details</h3>
+                <button class="facility-modal-close" onclick="closeFacilityModal()">&times;</button>
+            </div>
+            <div id="facilityDetailsBody">
+                <!-- Facility details will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Search Modal -->
+    <div class="google-modal" id="googleModal" onclick="if(event.target === this) closeGoogleModal()">
+        <div class="google-modal-content">
+            <div class="google-modal-header">
+                <h3><i class="fas fa-search" style="color: #6C63FF;"></i> Google Search</h3>
+                <button class="google-modal-close" onclick="closeGoogleModal()">&times;</button>
+            </div>
+            <div class="google-modal-body">
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="googleSearchInput" placeholder="Enter facility name to search on Google..." 
+                            style="flex: 1; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.3s;"
+                            onfocus="this.style.borderColor='#6C63FF'" 
+                            onblur="this.style.borderColor='#E5E7EB'"
+                            onkeypress="if(event.key==='Enter') performGoogleSearch()">
+                        <button onclick="performGoogleSearch()" 
+                                style="padding: 12px 24px; background: linear-gradient(135deg, #6C63FF 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; white-space: nowrap;">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
+                        <i class="fas fa-info-circle"></i> Search for facility details on Google
+                    </div>
+                </div>
+                
+                <!-- Quick Search Suggestions -->
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 13px; color: #6B7280; margin-bottom: 8px;">Quick searches:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <button class="quick-search-btn" onclick="quickGoogleSearch('facility contact phone number')">
+                            <i class="fas fa-phone"></i> Contact
+                        </button>
+                        <button class="quick-search-btn" onclick="quickGoogleSearch('facility address location')">
+                            <i class="fas fa-map-marker-alt"></i> Address
+                        </button>
+                        <button class="quick-search-btn" onclick="quickGoogleSearch('facility reviews ratings')">
+                            <i class="fas fa-star"></i> Reviews
+                        </button>
+                        <button class="quick-search-btn" onclick="quickGoogleSearch('facility website')">
+                            <i class="fas fa-globe"></i> Website
+                        </button>
+                        <button class="quick-search-btn" onclick="quickGoogleSearch('facility hours of operation')">
+                            <i class="fas fa-clock"></i> Hours
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Search Results / Iframe -->
+                <div id="googleSearchResults" style="display: none; margin-top: 16px; border-top: 1px solid #E5E7EB; padding-top: 16px;">
+                    <div style="font-size: 14px; color: #1A1A2E; margin-bottom: 8px;">
+                        <i class="fas fa-external-link-alt" style="color: #6C63FF;"></i> 
+                        <span id="searchResultLink">Opening Google search...</span>
+                    </div>
+                    <div style="background: #F9FAFB; border-radius: 8px; padding: 16px; min-height: 200px; border: 1px solid #E5E7EB;">
+                        <iframe id="googleIframe" src="" style="width: 100%; height: 400px; border: none; border-radius: 4px; display: none;"></iframe>
+                        <div id="googleFallbackMessage" style="display: block; text-align: center; padding: 40px 20px; color: #6B7280;">
+                            <i class="fas fa-external-link-alt" style="font-size: 48px; color: #6C63FF; margin-bottom: 16px; display: block;"></i>
+                            <p style="font-size: 14px; margin-bottom: 8px;">Google search will open in a new tab.</p>
+                            <p style="font-size: 12px;">Click the link below or use the search button above.</p>
+                            <a id="googleSearchLink" href="#" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 20px; background: #6C63FF; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Google Search</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

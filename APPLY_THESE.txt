@@ -1,0 +1,29 @@
+SECTION LABELS + STALE IMAGE FIX
+
+Changed since last round: ingestion\build_index.py only.
+(app.py is the same file as the previous round - copying it again is
+harmless if you are unsure whether that one landed.)
+
+  ingestion\build_index.py  -> CB\ingestion\build_index.py  (OVERWRITE)
+
+PowerShell, from the CB folder:
+
+  Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force
+
+  # Delete every previously extracted image - this is important.
+  Remove-Item .\vectorstore\sop_images -Recurse -Force -ErrorAction SilentlyContinue
+
+  .\venv\Scripts\python.exe -m ingestion.build_index
+  .\venv\Scripts\python.exe app.py
+
+REINDEX IS REQUIRED.
+
+The image folder must be cleared once by hand because the old build left
+files behind. From now on the indexer clears each document's folder itself
+at the start of every build.
+
+Check afterwards - "23. STATUS LETTERS" should include its EXAMPLES list:
+
+  .\venv\Scripts\python.exe -c "import json;p=json.load(open('vectorstore/parentstore.json',encoding='utf-8'));t=[x for x in p if x['topic_path'].endswith('23. STATUS LETTERS')];print(t[0]['text'] if t else 'NOT FOUND')"
+
+  Expect the Key Information paragraph AND the six EXAMPLES bullets.
