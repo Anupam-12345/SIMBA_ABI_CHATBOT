@@ -1,0 +1,36 @@
+# Caddy terminates TLS and proxies to the app container.
+#
+# Set SITE_ADDRESS in .env to your DNS name, e.g.
+#   SITE_ADDRESS=sop-chatbot.yourcompany.com
+# Caddy then obtains and renews a Let's Encrypt certificate automatically.
+#
+# For a private VM with no public DNS, use the internal issuer instead:
+#   SITE_ADDRESS=:443
+#   plus:  tls internal
+
+{$SITE_ADDRESS} {
+    encode zstd gzip
+
+    # Uploads and long LLM answers need a generous timeout.
+    reverse_proxy app:5000 {
+        transport http {
+            read_timeout 300s
+            write_timeout 300s
+        }
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 20mb
+            roll_keep 5
+        }
+    }
+}
