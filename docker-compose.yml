@@ -1,4 +1,4 @@
-services:
+﻿services:
   ollama:
     image: ollama/ollama:latest
     container_name: sop-ollama
@@ -31,7 +31,7 @@ services:
       ollama:
         condition: service_healthy
     ports:
-      - "${APP_PORT:-5000}:5000"
+      - "127.0.0.1:${APP_PORT:-5000}:5000"
     volumes:
       # SOP source documents - edit on the host, rebuild the index to apply.
       - ./docs:/app/docs
