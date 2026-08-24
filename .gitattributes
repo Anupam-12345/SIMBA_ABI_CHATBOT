@@ -1,4 +1,11 @@
-﻿* text=auto
+# Normalise line endings.
+#
+# Windows checkouts use CRLF for convenience, but shell scripts and the
+# Dockerfile MUST stay LF: a CRLF shebang makes Linux fail with
+#   /usr/bin/env: 'bash\r': No such file or directory
+# which is fatal and confusing to diagnose on the Azure VM.
+
+* text=auto
 
 *.sh            text eol=lf
 docker-entrypoint.sh text eol=lf
@@ -8,6 +15,7 @@ Dockerfile      text eol=lf
 .env.example    text eol=lf
 *.py            text eol=lf
 
+# Binary - never touch these.
 *.docx  binary
 *.xlsx  binary
 *.png   binary
