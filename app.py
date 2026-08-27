@@ -109,6 +109,30 @@ def init_auth_db():
             auth_provider TEXT DEFAULT 'local'
         )
     """)
+    # Self-healing schema migration.
+    #
+    # CREATE TABLE IF NOT EXISTS leaves an EXISTING table untouched, so an
+    # auth.db created before a column was added keeps the old schema forever.
+    # That is what caused:
+    #     sqlite3.OperationalError: no such column: auth_provider
+    expected_columns = {
+        "created_at": "TEXT",
+        "last_login": "TEXT",
+        "password_changed": "TEXT",
+        "is_active": "INTEGER DEFAULT 1",
+        "auth_provider": "TEXT DEFAULT 'local'",
+    }
+    existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
+    for column, definition in expected_columns.items():
+        if column not in existing_columns:
+            print(f"🔧 Migrating auth.db: adding users.{column}")
+            conn.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
+    conn.commit()
+
+    if "auth_provider" not in existing_columns:
+        conn.execute("UPDATE users SET auth_provider = 'local' WHERE auth_provider IS NULL")
+        conn.commit()
+
     
     default_email = "admin@annovasolutions.in"
     default_password = "Annova@123"
