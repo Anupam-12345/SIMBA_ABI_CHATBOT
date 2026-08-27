@@ -51,6 +51,12 @@ AZURE_SCOPE = ["User.Read"]
 
 AZURE_CONFIGURED = all([AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET])
 
+# Login is split by domain:
+#   @annovasolutions.com -> Microsoft / Azure AD  (team leaders)
+#   @annovasolutions.in  -> local email + password (users)
+AZURE_EMAIL_DOMAIN = os.environ.get('AZURE_EMAIL_DOMAIN', '@annovasolutions.com').strip().lower()
+LOCAL_EMAIL_DOMAIN = os.environ.get('LOCAL_EMAIL_DOMAIN', '@annovasolutions.in').strip().lower()
+
 
 def get_db():
     if "db" not in g:
@@ -125,7 +131,7 @@ def init_auth_db():
     existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
     for column, definition in expected_columns.items():
         if column not in existing_columns:
-            print(f"🔧 Migrating auth.db: adding users.{column}")
+            print(f"ðŸ”§ Migrating auth.db: adding users.{column}")
             conn.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
     conn.commit()
 
@@ -151,7 +157,7 @@ def init_auth_db():
             "INSERT INTO users (email, password_hash, salt, auth_provider) VALUES (?, ?, ?, 'local')",
             (default_email, password_hash, salt)
         )
-        print(f"✅ Default user created: {default_email} / Password: {default_password}")
+        print(f"âœ… Default user created: {default_email} / Password: {default_password}")
     
     conn.commit()
     conn.close()
@@ -219,8 +225,12 @@ def local_login():
     if not email or not password:
         return jsonify({"success": False, "error": "Email and password are required"}), 400
     
-    if not email.endswith('@annovasolutions.in'):
-        return jsonify({"success": False, "error": "Please use @annovasolutions.in email"}), 400
+    if not email.lower().endswith(LOCAL_EMAIL_DOMAIN):
+        if email.lower().endswith(AZURE_EMAIL_DOMAIN):
+            return jsonify({"success": False, "error":
+                f"{AZURE_EMAIL_DOMAIN} accounts sign in with the 'Sign in with Microsoft' button."}), 400
+        return jsonify({"success": False, "error":
+            f"Please use your {LOCAL_EMAIL_DOMAIN} email"}), 400
     
     auth_db = get_auth_db()
     user = auth_db.execute(
@@ -241,7 +251,7 @@ def local_login():
                 "SELECT * FROM users WHERE email = ? AND is_active = 1",
                 (email,)
             ).fetchone()
-            print(f"✅ Auto-created user: {email}")
+            print(f"âœ… Auto-created user: {email}")
         else:
             return jsonify({"success": False, "error": "User not found. Please use default password for first login."}), 401
     
@@ -276,6 +286,7 @@ def azure_login():
     if not AZURE_CONFIGURED:
         return jsonify({"error": "Azure AD is not configured."}), 500
     
+    session.permanent = True
     session['azure_state'] = secrets.token_hex(16)
     auth_url = f"{AZURE_AUTHORITY}/oauth2/v2.0/authorize"
     params = {
@@ -329,8 +340,12 @@ def azure_callback():
         if not user_email:
             return jsonify({"error": "Could not retrieve user email"}), 400
         
-        if not user_email.endswith('@annovasolutions.com'):
-            return jsonify({"error": "Only @annovasolutions.com users are allowed"}), 403
+        if not user_email.lower().endswith(AZURE_EMAIL_DOMAIN):
+            if user_email.lower().endswith(LOCAL_EMAIL_DOMAIN):
+                return jsonify({"error":
+                    f"{LOCAL_EMAIL_DOMAIN} accounts sign in with email and password, not Microsoft."}), 403
+            return jsonify({"error":
+                f"Only {AZURE_EMAIL_DOMAIN} users can sign in with Microsoft"}), 403
         
         auth_db = get_auth_db()
         user = auth_db.execute(
@@ -506,10 +521,10 @@ def _image_urls_from_retrieved(retrieved):
                 continue
 
     if considered and not urls:
-        print(f"🖼️ {considered} image path(s) on the answer topic but none served "
+        print(f"ðŸ–¼ï¸ {considered} image path(s) on the answer topic but none served "
               f"(missing file, outside {image_root}, or non-web format). First: {first_seen}")
     elif urls:
-        print(f"🖼️ {len(urls)} image(s) attached from the answer topic")
+        print(f"ðŸ–¼ï¸ {len(urls)} image(s) attached from the answer topic")
 
     return urls[:getattr(config, "MAX_IMAGES_PER_ANSWER", 6)]
 
@@ -557,7 +572,7 @@ def load_facility_data():
         )
 
         if facility_df is None:
-            print("❌ No facility data available.")
+            print("âŒ No facility data available.")
             print(f"   Looked for: {FACILITY_DB_PATH}")
             print(f"   and:        {FACILITY_DATA_PATH}")
             print("   Build the encrypted database with:")
@@ -566,15 +581,15 @@ def load_facility_data():
             return False
 
         label = "encrypted database" if facility_source == "encrypted" else "Excel file"
-        print(f"✅ Loaded {len(facility_df)} facility records from {label}")
+        print(f"âœ… Loaded {len(facility_df)} facility records from {label}")
         print(f"   Columns: {list(facility_df.columns)}")
         if facility_source == "excel":
-            print("   ℹ️ Using the spreadsheet. To stop shipping it, run:")
+            print("   â„¹ï¸ Using the spreadsheet. To stop shipping it, run:")
             print("     python tools/build_facility_db.py")
         return True
 
     except Exception as e:
-        print(f"❌ Error loading facility data: {e}")
+        print(f"âŒ Error loading facility data: {e}")
         import traceback
         traceback.print_exc()
         facility_df = None
@@ -664,7 +679,7 @@ def search_facilities():
         return jsonify({"facilities": results[:20]})
         
     except Exception as e:
-        print(f"❌ Error in search_facilities: {e}")
+        print(f"âŒ Error in search_facilities: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"facilities": []})
@@ -701,7 +716,7 @@ def get_facility_details():
         })
         
     except Exception as e:
-        print(f"❌ Error in get_facility_details: {e}")
+        print(f"âŒ Error in get_facility_details: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": "Error fetching facility details"}), 500
@@ -949,7 +964,7 @@ def extract_matching_faq(text: str, query: str) -> List[str]:
     
 #     # Build response
 #     answer_parts = []
-#     answer_parts.append(f"📋 **{header}**")
+#     answer_parts.append(f"ðŸ“‹ **{header}**")
 #     answer_parts.append("")
     
 #     # Extract lines
@@ -968,7 +983,7 @@ def extract_matching_faq(text: str, query: str) -> List[str]:
         
 #         clean_line = line_clean
 #         clean_line = clean_line.replace('**', '').replace('##', '').replace('###', '')
-#         clean_line = re.sub(r'^[\s]*[-•*]\s+', '', clean_line)
+#         clean_line = re.sub(r'^[\s]*[-â€¢*]\s+', '', clean_line)
 #         clean_line = re.sub(r'^[\s]*\d+[.)]\s+', '', clean_line)
 #         clean_line = ' '.join(clean_line.split())
         
@@ -984,7 +999,7 @@ def extract_matching_faq(text: str, query: str) -> List[str]:
 #             clean_line = line.strip()
 #             if clean_line and len(clean_line) > 5:
 #                 clean_line = clean_line.replace('**', '').replace('##', '').replace('###', '')
-#                 clean_line = re.sub(r'^[\s]*[-•*]\s+', '', clean_line)
+#                 clean_line = re.sub(r'^[\s]*[-â€¢*]\s+', '', clean_line)
 #                 clean_line = ' '.join(clean_line.split())
 #                 if clean_line and clean_line not in ['FAQ:', 'FAQ']:
 #                     content_lines.append(clean_line)
@@ -1096,7 +1111,7 @@ def extract_matching_faq(text: str, query: str) -> List[str]:
     
 #     # Build response with ALL content
 #     answer_parts = []
-#     answer_parts.append(f"📋 **{header}**")
+#     answer_parts.append(f"ðŸ“‹ **{header}**")
 #     answer_parts.append("")
     
 #     # Process all lines, keeping the structure
@@ -1122,7 +1137,7 @@ def extract_matching_faq(text: str, query: str) -> List[str]:
 #         clean_line = clean_line.replace('`', '')
         
 #         # Remove bullet markers but keep the content
-#         clean_line = re.sub(r'^[\s]*[-•*]\s+', '', clean_line)
+#         clean_line = re.sub(r'^[\s]*[-â€¢*]\s+', '', clean_line)
 #         clean_line = re.sub(r'^[\s]*\d+[.)]\s+', '', clean_line)
         
 #         # Clean up extra spaces
@@ -1192,7 +1207,7 @@ def answer_is_complete(answer: str, chunk: dict, min_coverage: float = 0.8) -> b
     covered = sum(1 for unit in source_units if unit[:25] in blob)
     coverage = covered / len(source_units)
     if coverage < min_coverage:
-        print(f"⚠️ Answer covers only {covered}/{len(source_units)} source steps — serving topic verbatim")
+        print(f"âš ï¸ Answer covers only {covered}/{len(source_units)} source steps â€” serving topic verbatim")
     return coverage >= min_coverage
 
 
@@ -1204,14 +1219,14 @@ def fix_llm_hallucinations(response: str, query: str) -> str:
     corrections = {
         "Recover Records Available Soon with ETA": "Records Available Shortly with ETA",
         "Recover Records": "Records",
-        "Solcom Retrieval Note": "Solcom – Retrieval Note",
-        "Solcom Retrival Note": "Solcom – Retrieval Note",  # Also fix misspelling
-        "Retrieval Note": "Solcom – Retrieval Note",
+        "Solcom Retrieval Note": "Solcom â€“ Retrieval Note",
+        "Solcom Retrival Note": "Solcom â€“ Retrieval Note",  # Also fix misspelling
+        "Retrieval Note": "Solcom â€“ Retrieval Note",
     }
     
     # Longest-first with a guard against re-correcting already-correct text.
-    # Dict order previously turned "Solcom – Retrieval Note" into
-    # "Solcom – Solcom – Retrieval Note".
+    # Dict order previously turned "Solcom â€“ Retrieval Note" into
+    # "Solcom â€“ Solcom â€“ Retrieval Note".
     for incorrect, correct in sorted(corrections.items(), key=lambda kv: len(kv[0]), reverse=True):
         if incorrect == correct or incorrect not in response:
             continue
@@ -1219,11 +1234,11 @@ def fix_llm_hallucinations(response: str, query: str) -> str:
         pattern = (f"(?<!{re.escape(prefix)})" if prefix else "") + re.escape(incorrect)
         fixed = re.sub(pattern, correct, response)
         if fixed != response:
-            print(f"🔧 Fixing terminology: '{incorrect}' -> '{correct}'")
+            print(f"ðŸ”§ Fixing terminology: '{incorrect}' -> '{correct}'")
             response = fixed
     
     # Fix VPU section mixing issues
-    if 'VPU – Picking Up Records' in response and 'VPU – No X-Rays' in response:
+    if 'VPU â€“ Picking Up Records' in response and 'VPU â€“ No X-Rays' in response:
         # Check if the response is mixing sections
         lines = response.split('\n')
         vpu_pickup = False
@@ -1232,10 +1247,10 @@ def fix_llm_hallucinations(response: str, query: str) -> str:
         current_section = None
         
         for line in lines:
-            if 'VPU – Picking Up Records' in line:
+            if 'VPU â€“ Picking Up Records' in line:
                 vpu_pickup = True
                 current_section = 'pickup'
-            elif 'VPU – No X-Rays' in line:
+            elif 'VPU â€“ No X-Rays' in line:
                 vpu_no_xrays = True
                 current_section = 'noxrays'
             
@@ -1247,7 +1262,7 @@ def fix_llm_hallucinations(response: str, query: str) -> str:
         
         if vpu_pickup and vpu_no_xrays:
             response = '\n'.join(fixed_lines)
-            print("🔧 Fixed VPU section mixing")
+            print("ðŸ”§ Fixed VPU section mixing")
     
     return response
 
@@ -1320,7 +1335,7 @@ def build_smart_fallback(query: str, chunks: list) -> str:
     # Add header if not already in content
     header_text = (header or "").replace('*', '').replace('#', '').strip()
     if header_text and header_text not in '\n'.join(cleaned_lines):
-        answer_parts.append(f"📋 {header_text}")
+        answer_parts.append(f"ðŸ“‹ {header_text}")
         answer_parts.append("")
     
     # Process all lines, preserving structure
@@ -1375,7 +1390,7 @@ def chat():
     # Check if index exists
     if not check_index():
         return jsonify({
-            "answer": "⚠️ The document index has not been built yet. Please run: python -m ingestion.build_index",
+            "answer": "âš ï¸ The document index has not been built yet. Please run: python -m ingestion.build_index",
             "sources": [],
             "confidence": 0,
             "confidence_label": "Low"
@@ -1385,9 +1400,9 @@ def chat():
     try:
         retrieved = hybrid_retrieve(query, document_filter=document_filter, top_k_final=config.TOP_K_FINAL)
     except Exception as e:
-        print(f"❌ Retrieval error: {e}")
+        print(f"âŒ Retrieval error: {e}")
         return jsonify({
-            "answer": "⚠️ I'm having trouble retrieving information. Please try again or rephrase your question.",
+            "answer": "âš ï¸ I'm having trouble retrieving information. Please try again or rephrase your question.",
             "sources": [],
             "confidence": 0,
             "confidence_label": "Low"
@@ -1472,7 +1487,7 @@ def chat():
     # ============================================================
     
     if is_faq_query(query):
-        print("📝 FAQ query detected - attempting to extract specific FAQ")
+        print("ðŸ“ FAQ query detected - attempting to extract specific FAQ")
         
         # Look for FAQ chunks in retrieved documents
         faq_chunk = None
@@ -1491,13 +1506,13 @@ def chat():
             break
         
         if faq_chunk:
-            print("📝 Found FAQ chunk, extracting matching FAQ")
+            print("ðŸ“ Found FAQ chunk, extracting matching FAQ")
             faq_lines = extract_matching_faq(faq_chunk['text'], query)
             
             if faq_lines:
                 # Build professional response from FAQ
                 answer_parts = []
-                answer_parts.append("📋 **FAQ Answer**")
+                answer_parts.append("ðŸ“‹ **FAQ Answer**")
                 answer_parts.append("")
                 
                 for line in faq_lines:
@@ -1542,49 +1557,49 @@ def chat():
     # ============================================================
     
     # if config.USE_LLM:
-    #     print("🤖 Generating RAG response with LLM...")
+    #     print("ðŸ¤– Generating RAG response with LLM...")
     #     try:
     #         # Use only the top chunk for LLM context
     #         llm_answer = ollama_client.generate_rag_response(query, retrieved[:config.MAX_RELEVANT_CHUNKS])
             
     #         # Check if LLM response is valid
-    #         if llm_answer and len(llm_answer) > 30 and not any(x in llm_answer for x in ['❌', '⚠️', 'error']):
+    #         if llm_answer and len(llm_answer) > 30 and not any(x in llm_answer for x in ['âŒ', 'âš ï¸', 'error']):
     #             answer = llm_answer
-    #             print("✅ Using LLM response")
+    #             print("âœ… Using LLM response")
     #         else:
-    #             print("⚠️ LLM response invalid, using smart fallback")
+    #             print("âš ï¸ LLM response invalid, using smart fallback")
     #             answer = build_smart_fallback(query, retrieved)
                 
     #     except Exception as e:
-    #         print(f"❌ LLM error: {e}")
+    #         print(f"âŒ LLM error: {e}")
     #         answer = build_smart_fallback(query, retrieved)
     # else:
-    #     print("📄 Using smart fallback")
+    #     print("ðŸ“„ Using smart fallback")
     #     answer = build_smart_fallback(query, retrieved)
 
     # if config.USE_LLM:
-    #     print("🤖 Generating RAG response with LLM...")
+    #     print("ðŸ¤– Generating RAG response with LLM...")
     #     try:
     #         # Use ALL relevant chunks for better context
     #         llm_answer = ollama_client.generate_rag_response(query, retrieved[:config.MAX_RELEVANT_CHUNKS])
             
     #         # Check if LLM response is valid
-    #         if llm_answer and len(llm_answer) > 30 and not any(x in llm_answer for x in ['❌', '⚠️', 'error']):
+    #         if llm_answer and len(llm_answer) > 30 and not any(x in llm_answer for x in ['âŒ', 'âš ï¸', 'error']):
     #             answer = llm_answer
-    #             print("✅ Using LLM response")
+    #             print("âœ… Using LLM response")
     #         else:
-    #             print("⚠️ LLM response invalid, using smart fallback")
+    #             print("âš ï¸ LLM response invalid, using smart fallback")
     #             answer = build_smart_fallback(query, retrieved)
                 
     #     except Exception as e:
-    #         print(f"❌ LLM error: {e}")
+    #         print(f"âŒ LLM error: {e}")
     #         answer = build_smart_fallback(query, retrieved)
     # else:
-    #     print("📄 Using smart fallback")
+    #     print("ðŸ“„ Using smart fallback")
     #     answer = build_smart_fallback(query, retrieved)
 
     # if config.USE_LLM:
-    #     print("🤖 Generating RAG response with LLM...")
+    #     print("ðŸ¤– Generating RAG response with LLM...")
     #     try:
     #         # Use ALL relevant chunks for better context
     #         llm_answer = ollama_client.generate_rag_response(query, retrieved[:config.MAX_RELEVANT_CHUNKS])
@@ -1604,20 +1619,20 @@ def chat():
     #                 if len(common_words) / max(len(source_words), 1) > 0.15:
     #                     is_valid = True
     #                 else:
-    #                     print("⚠️ LLM response doesn't match source content - using fallback")
+    #                     print("âš ï¸ LLM response doesn't match source content - using fallback")
             
-    #         if is_valid and not any(x in llm_answer for x in ['❌', '⚠️', 'error']):
+    #         if is_valid and not any(x in llm_answer for x in ['âŒ', 'âš ï¸', 'error']):
     #             answer = llm_answer
-    #             print("✅ Using LLM response")
+    #             print("âœ… Using LLM response")
     #         else:
-    #             print("⚠️ LLM response invalid, using smart fallback")
+    #             print("âš ï¸ LLM response invalid, using smart fallback")
     #             answer = build_smart_fallback(query, retrieved)
                 
     #     except Exception as e:
-    #         print(f"❌ LLM error: {e}")
+    #         print(f"âŒ LLM error: {e}")
     #         answer = build_smart_fallback(query, retrieved)
     # else:
-    #     print("📄 Using smart fallback")
+    #     print("ðŸ“„ Using smart fallback")
     #     answer = build_smart_fallback(query, retrieved)
 
     top_chunk = answer_chunk or (used_chunks[0] if used_chunks else None)
@@ -1625,7 +1640,7 @@ def chat():
     verbatim_mode = structured and getattr(config, "VERBATIM_PROCEDURE_ANSWERS", True)
 
     if config.USE_LLM and not verbatim_mode:
-        print("🤖 Generating RAG response with LLM...")
+        print("ðŸ¤– Generating RAG response with LLM...")
         try:
             llm_answer = ollama_client.generate_rag_response(query, used_chunks)
 
@@ -1636,27 +1651,27 @@ def chat():
 
                 if top_chunk and not answer_is_complete(llm_answer, top_chunk):
                     answer = build_smart_fallback(query, [top_chunk])
-                elif not any(x in llm_answer for x in ['❌', '⚠️']):
+                elif not any(x in llm_answer for x in ['âŒ', 'âš ï¸']):
                     answer = llm_answer
-                    print("✅ Using LLM response (with fixes)")
+                    print("âœ… Using LLM response (with fixes)")
                 else:
-                    print("⚠️ LLM response contains errors, using fallback")
+                    print("âš ï¸ LLM response contains errors, using fallback")
                     answer = build_smart_fallback(query, used_chunks)
             else:
-                print("⚠️ LLM response invalid, using smart fallback")
+                print("âš ï¸ LLM response invalid, using smart fallback")
                 answer = build_smart_fallback(query, used_chunks)
 
         except Exception as e:
-            print(f"❌ LLM error: {e}")
+            print(f"âŒ LLM error: {e}")
             answer = build_smart_fallback(query, used_chunks)
     elif verbatim_mode:
         # Numbered / bulleted procedure: reproduce the topic exactly. A 1.5B
         # model cannot be trusted to copy an 9-step procedure without dropping
         # or paraphrasing steps.
-        print("📄 Structured topic — serving verbatim")
+        print("ðŸ“„ Structured topic â€” serving verbatim")
         answer = build_smart_fallback(query, [top_chunk])
     else:
-        print("📄 Using smart fallback")
+        print("ðŸ“„ Using smart fallback")
         answer = build_smart_fallback(query, used_chunks)
 
     # Save to history
